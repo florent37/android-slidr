@@ -8,8 +8,8 @@
         <attr name="slidr_colorbackground" format="color" />
         <attr name="slidr_step_colorizeAfterLast" format="boolean" />
         <attr name="slidr_step_colorAfterLast" format="color" />
-        <attr name="slidr_step_centerText" format="boolean" />
-        <attr name="slidr_step_uniqueTextColor" format="boolean" />
+        <attr name="slidr_draw_bubble" format="boolean" />
+        <attr name="slidr_modeRegion" format="boolean" />
     </declare-styleable>
 
 </resources>

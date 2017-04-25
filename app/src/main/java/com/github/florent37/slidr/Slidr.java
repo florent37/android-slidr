@@ -34,7 +34,6 @@ public class Slidr extends View {
     final int BUBBLE_ARROW_HEIGHT = 20;
     final int BUBBLE_ARROW_WIDTH = 40;
 
-    final int PADDING_STOPOVER_TEXT = 15;
     private Listener listener;
     private GestureDetectorCompat detector;
     private Settings settings;
@@ -48,6 +47,7 @@ public class Slidr extends View {
     private float barCenterY;
     private float bubbleHeight;
     private float bubbleWidth;
+    private Formatter formatter = new EurosFormatter();
 
     public Slidr(Context context) {
         this(context, null);
@@ -80,11 +80,11 @@ public class Slidr extends View {
         return size * getResources().getDisplayMetrics().density;
     }
 
+    //region getters
+
     public int getMax() {
         return max;
     }
-
-    //region getters
 
     public void setMax(int max) {
         this.max = max;
@@ -110,6 +110,8 @@ public class Slidr extends View {
     public boolean onTouchEvent(MotionEvent event) {
         return handleTouch(event);
     }
+
+    //endregion
 
     boolean handleTouch(MotionEvent event) {
         boolean handledByDetector = this.detector.onTouchEvent(event);
@@ -144,8 +146,6 @@ public class Slidr extends View {
         return true;
     }
 
-    //endregion
-
     void actionUp() {
 
     }
@@ -177,9 +177,12 @@ public class Slidr extends View {
     private void updateValues() {
         barWidth = getWidth() - this.settings.paddingCorners * 2;
 
-        updateBubbleWidth();
-        this.bubbleHeight = dpToPx(settings.textSizeBubbleCurrent) + BUBBLE_PADDING_VERTICAL * 2f + BUBBLE_ARROW_HEIGHT;
-
+        if (settings.drawBubble) {
+            updateBubbleWidth();
+            this.bubbleHeight = dpToPx(settings.textSizeBubbleCurrent) + BUBBLE_PADDING_VERTICAL * 2f + BUBBLE_ARROW_HEIGHT;
+        } else {
+            this.bubbleHeight = 0;
+        }
         if (settings.drawTextOnTop) {
             final float spaceBetweenBubbleAndBar = 50;
             this.barY = bubbleHeight + spaceBetweenBubbleAndBar + (settings.barHeight) / 2f;
@@ -229,17 +232,22 @@ public class Slidr extends View {
             final float paddingLeft = settings.paddingCorners;
             final float paddingRight = settings.paddingCorners;
 
-            final Step stepBeforeCustor = findStepOfCustor();
-            if (stepBeforeCustor != null) {
-                settings.paintIndicator.setColor(stepBeforeCustor.colorBefore);
-                settings.paintBubble.setColor(stepBeforeCustor.colorBefore);
+            if (settings.modeRegion) {
+                settings.paintIndicator.setColor(settings.colorBackground);
+                settings.paintBubble.setColor(settings.colorBackground);
             } else {
-                if (settings.step_colorizeAfterLast) {
-                    settings.paintIndicator.setColor(settings.step_colorAfterLast);
-                    settings.paintBubble.setColor(settings.step_colorAfterLast);
+                final Step stepBeforeCustor = findStepOfCustor();
+                if (stepBeforeCustor != null) {
+                    settings.paintIndicator.setColor(stepBeforeCustor.colorBefore);
+                    settings.paintBubble.setColor(stepBeforeCustor.colorBefore);
                 } else {
-                    settings.paintIndicator.setColor(settings.colorBackground);
-                    settings.paintBubble.setColor(settings.colorBackground);
+                    if (settings.step_colorizeAfterLast) {
+                        settings.paintIndicator.setColor(settings.step_colorAfterLast);
+                        settings.paintBubble.setColor(settings.step_colorAfterLast);
+                    } else {
+                        settings.paintIndicator.setColor(settings.colorBackground);
+                        settings.paintBubble.setColor(settings.colorBackground);
+                    }
                 }
             }
 
@@ -257,30 +265,37 @@ public class Slidr extends View {
                 canvas.drawCircle(centerCircleRight, barCenterY, radiusCorner, settings.paintBar);
                 canvas.drawRect(centerCircleLeft, barY, centerCircleRight, barY + settings.barHeight, settings.paintBar);
 
-                float lastX = centerCircleLeft;
-                boolean first = true;
-                for (Step step : steps) {
-                    settings.paintBar.setColor(step.colorBefore);
-                    if (first) {
-                        canvas.drawCircle(centerCircleLeft, barCenterY, radiusCorner, settings.paintBar);
+                if (settings.modeRegion) {
+                    settings.paintBar.setColor(settings.colorLeft);
+
+                    canvas.drawCircle(centerCircleLeft, barCenterY, radiusCorner, settings.paintBar);
+                    canvas.drawRect(centerCircleLeft, barY, indicatorCenterX, barY + settings.barHeight, settings.paintBar);
+                } else {
+                    float lastX = centerCircleLeft;
+                    boolean first = true;
+                    for (Step step : steps) {
+                        settings.paintBar.setColor(step.colorBefore);
+                        if (first) {
+                            canvas.drawCircle(centerCircleLeft, barCenterY, radiusCorner, settings.paintBar);
+                        }
+
+                        final float x = step.xStart + paddingLeft;
+                        canvas.drawRect(lastX, barY, x, barY + settings.barHeight, settings.paintBar);
+                        lastX = x;
+
+                        first = false;
                     }
 
-                    final float x = step.xStart + paddingLeft;
-                    canvas.drawRect(lastX, barY, x, barY + settings.barHeight, settings.paintBar);
-                    lastX = x;
 
-                    first = false;
-                }
-
-
-                if (settings.step_colorizeAfterLast) {
-                    //find the step just below currentValue
-                    for (int i = steps.size() - 1; i >= 0; i--) {
-                        final Step step = steps.get(i);
-                        if (currentValue > step.value) {
-                            settings.paintBar.setColor(settings.step_colorAfterLast);
-                            canvas.drawRect(step.xStart + paddingLeft, barY, indicatorCenterX, barY + settings.barHeight, settings.paintBar);
-                            break;
+                    if (settings.step_colorizeAfterLast) {
+                        //find the step just below currentValue
+                        for (int i = steps.size() - 1; i >= 0; i--) {
+                            final Step step = steps.get(i);
+                            if (currentValue > step.value) {
+                                settings.paintBar.setColor(settings.step_colorAfterLast);
+                                canvas.drawRect(step.xStart + paddingLeft, barY, indicatorCenterX, barY + settings.barHeight, settings.paintBar);
+                                break;
+                            }
                         }
                     }
                 }
@@ -290,13 +305,11 @@ public class Slidr extends View {
             { //texts top (values)
                 if (settings.drawTextOnTop) {
                     final float textY = barY - 30;
-                    if (settings.step_centerText) {
-                        float lastX = 0;
-                        for (Step step : steps) {
-                            final float x = paddingLeft + (step.xStart - lastX) / 2f;
-                            drawIndicatorsText(canvas, formatValue(step.value), x, textY, Layout.Alignment.ALIGN_CENTER);
-                            lastX = x;
-                        }
+                    if (settings.modeRegion) {
+                        final float leftValue = currentValue;
+                        final float rightValue = max - leftValue;
+                        drawIndicatorsText(canvas, formatValue(leftValue), (indicatorCenterX - paddingLeft) / 2f + paddingLeft,  textY, Layout.Alignment.ALIGN_CENTER);
+                        drawIndicatorsText(canvas, formatValue(rightValue), indicatorCenterX + (barWidth - indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
                     } else {
                         drawIndicatorsText(canvas, formatValue(0), 0 + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
                         for (Step step : steps) {
@@ -329,14 +342,16 @@ public class Slidr extends View {
 
             //bubble
             {
-                float bubbleCenterX = indicatorCenterX;
-                float trangleCenterX = indicatorCenterX;
-                if (bubbleCenterX > canvas.getWidth() - bubbleWidth / 2f) {
-                    bubbleCenterX = canvas.getWidth() - bubbleWidth / 2f;
-                } else if (bubbleCenterX - bubbleWidth / 2f < 0) {
-                    bubbleCenterX = bubbleWidth / 2f;
+                if (settings.drawBubble) {
+                    float bubbleCenterX = indicatorCenterX;
+                    float trangleCenterX = indicatorCenterX;
+                    if (bubbleCenterX > canvas.getWidth() - bubbleWidth / 2f) {
+                        bubbleCenterX = canvas.getWidth() - bubbleWidth / 2f;
+                    } else if (bubbleCenterX - bubbleWidth / 2f < 0) {
+                        bubbleCenterX = bubbleWidth / 2f;
+                    }
+                    drawBubble(canvas, bubbleCenterX, trangleCenterX, 0);
                 }
-                drawBubble(canvas, bubbleCenterX, trangleCenterX, 0);
             }
         }
 
@@ -344,7 +359,7 @@ public class Slidr extends View {
     }
 
     private String formatValue(float value) {
-        return String.format("%d €", (int) value);
+        return formatter.format(value);
     }
 
     private void drawText(Canvas canvas, String text, float x, float y, TextPaint paint, Layout.Alignment aligment) {
@@ -464,6 +479,10 @@ public class Slidr extends View {
         void valueChanged(Slidr slidr, float currentValue);
     }
 
+    public interface Formatter {
+        String format(float value);
+    }
+
     public static class Step implements Comparable<Step> {
         private String name;
         private float value;
@@ -503,9 +522,10 @@ public class Slidr extends View {
         private float paddingCorners = 60;
 
         private boolean step_colorizeAfterLast = false;
-        private boolean step_centerText = false;
         private boolean drawTextOnTop = true;
         private boolean drawTextOnBottom = true;
+        private boolean drawBubble = true;
+        private boolean modeRegion = false;
 
         public Settings(Slidr slidr) {
             this.slidr = slidr;
@@ -551,8 +571,14 @@ public class Slidr extends View {
                 this.drawTextOnTop = a.getBoolean(R.styleable.Slidr_slidr_drawTextOnTop, drawTextOnTop);
                 this.drawTextOnBottom = a.getBoolean(R.styleable.Slidr_slidr_drawTextOnBottom, drawTextOnBottom);
                 this.barHeight = a.getDimensionPixelOffset(R.styleable.Slidr_slidr_barHeight, (int) barHeight);
-                this.step_centerText = a.getBoolean(R.styleable.Slidr_slidr_step_centerText, step_centerText);
+                this.drawBubble = a.getBoolean(R.styleable.Slidr_slidr_draw_bubble, drawBubble);
+                this.modeRegion = a.getBoolean(R.styleable.Slidr_slidr_modeRegion, modeRegion);
                 a.recycle();
+
+                if (modeRegion) {
+                    drawBubble = false;
+                    drawTextOnBottom = false;
+                }
             }
         }
 
@@ -569,6 +595,14 @@ public class Slidr extends View {
 
         private float dpToPx(int size) {
             return size * slidr.getResources().getDisplayMetrics().density;
+        }
+    }
+
+    public class EurosFormatter implements Formatter {
+
+        @Override
+        public String format(float value) {
+            return String.format("%d €", (int) value);
         }
     }
 }
