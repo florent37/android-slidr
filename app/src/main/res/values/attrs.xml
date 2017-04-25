@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="Slidr">
+        <attr name="slidr_barHeight" format="dimension" />
+        <attr name="slidr_drawTextOnTop" format="boolean" />
+        <attr name="slidr_drawTextOnBottom" format="boolean" />
+        <attr name="slidr_colorbackground" format="color" />
+        <attr name="slidr_step_colorizeAfterLast" format="boolean" />
+        <attr name="slidr_step_colorAfterLast" format="color" />
+        <attr name="slidr_step_centerText" format="boolean" />
+        <attr name="slidr_step_uniqueTextColor" format="boolean" />
+    </declare-styleable>
+
+</resources>

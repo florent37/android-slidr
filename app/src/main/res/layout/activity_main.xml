@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.github.florent37.slidr.MainActivity">
+
+    <com.github.florent37.slidr.Slidr
+        android:id="@+id/slideure"
+        android:layout_width="250dp"
+        android:layout_height="120dp"
+        app:slideure_colorbackground="#ed5564"
+        app:slideure_step_centerText="false"
+        android:layout_gravity="center" />
+
+
+    <com.github.florent37.slidr.Slidr
+        android:id="@+id/slideure2"
+        android:layout_width="250dp"
+        android:layout_height="120dp"
+        app:slideure_step_colorizeAfterLast="true"
+        app:slideure_step_colorAfterLast="#ed5564"
+        app:slideure_drawTextOnBottom="false"
+        app:slideure_drawTextOnTop="false"
+        app:slideure_barHeight="10dp"
+        android:layout_gravity="center" />
+
+</LinearLayout>
