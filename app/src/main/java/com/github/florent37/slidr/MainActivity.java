@@ -3,6 +3,7 @@ package com.github.florent37.slidr;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,7 +18,13 @@ public class MainActivity extends AppCompatActivity {
             slidr.setMax(500);
             slidr.addStep(new Slidr.Step("test", 250, Color.parseColor("#007E90")));
             slidr.setTextMax("max\nvalue");
-
+            slidr.setCurrentValue(300);
+            slidr.setListener(new Slidr.Listener() {
+                @Override
+                public void valueChanged(Slidr slidr, float currentValue) {
+                    Log.d("slidr", ""+currentValue);
+                }
+            });
 
         }
         {

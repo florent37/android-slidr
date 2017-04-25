@@ -6,6 +6,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.GestureDetectorCompat;
@@ -51,6 +54,7 @@ public class Slidr extends View {
     private Formatter formatter = new EurosFormatter();
 
     private String textMax = "";
+    private NotifyListenerHandler notifyListenerHandler = new NotifyListenerHandler();
 
     public Slidr(Context context) {
         this(context, null);
@@ -79,11 +83,11 @@ public class Slidr extends View {
         this.listener = listener;
     }
 
+    //region getters
+
     private float dpToPx(int size) {
         return size * getResources().getDisplayMetrics().density;
     }
-
-    //region getters
 
     public int getMax() {
         return max;
@@ -97,11 +101,18 @@ public class Slidr extends View {
         return currentValue;
     }
 
+    public void setCurrentValue(float value) {
+        this.currentValue = value;
+        update();
+    }
+
     public void addStep(List<Step> steps) {
         this.steps.addAll(steps);
         Collections.sort(steps);
         update();
     }
+
+    //endregion
 
     public void addStep(Step step) {
         this.steps.add(step);
@@ -114,8 +125,6 @@ public class Slidr extends View {
         return handleTouch(event);
     }
 
-    //endregion
-
     boolean handleTouch(MotionEvent event) {
         boolean handledByDetector = this.detector.onTouchEvent(event);
         if (!handledByDetector) {
@@ -124,10 +133,12 @@ public class Slidr extends View {
             switch (action) {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
+                    notifyListenerHandler.stop();
                     actionUp();
                     break;
                 case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_MOVE: {
+                    notifyListenerHandler.start();
 
                     float evX = event.getX();
 
@@ -159,23 +170,9 @@ public class Slidr extends View {
             currentValue = currentPercent * max;
             //Log.d("xStart", currentPercent + " " + currentValue);
             updateBubbleWidth();
-
-            if (listener != null) {
-                removeCallbacks(notifyListenerRunnable);
-                postDelayed(notifyListenerRunnable, 500);
-            }
         }
         postInvalidate();
     }
-
-    final Runnable notifyListenerRunnable = new Runnable() {
-        @Override
-        public void run() {
-            if (listener != null) {
-                listener.valueChanged(Slidr.this, currentValue);
-            }
-        }
-    };
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -212,6 +209,8 @@ public class Slidr extends View {
             final float stoppoverPercent = step.value / max;
             step.xStart = stoppoverPercent * barWidth;
         }
+
+        indicatorX = currentValue / max * getWidth();
     }
 
     private Step findStepBeforeCustor() {
@@ -260,7 +259,7 @@ public class Slidr extends View {
                 } else {
                     if (settings.step_colorizeAfterLast) {
                         final Step beforeCustor = findStepBeforeCustor();
-                        if(beforeCustor != null) {
+                        if (beforeCustor != null) {
                             settings.paintIndicator.setColor(beforeCustor.colorAfter);
                             settings.paintBubble.setColor(beforeCustor.colorAfter);
                         }
@@ -280,7 +279,7 @@ public class Slidr extends View {
                 final float centerCircleRight = getWidth() - paddingRight;
 
                 //grey background
-                if(settings.modeRegion){
+                if (settings.modeRegion) {
                     settings.paintBar.setColor(settings.regionColorRight);
                 } else {
                     settings.paintBar.setColor(settings.colorBackground);
@@ -332,7 +331,7 @@ public class Slidr extends View {
                     if (settings.modeRegion) {
                         final float leftValue = currentValue;
                         final float rightValue = max - leftValue;
-                        drawIndicatorsText(canvas, formatValue(leftValue), (indicatorCenterX - paddingLeft) / 2f + paddingLeft,  textY, Layout.Alignment.ALIGN_CENTER);
+                        drawIndicatorsText(canvas, formatValue(leftValue), (indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
                         drawIndicatorsText(canvas, formatValue(rightValue), indicatorCenterX + (barWidth - indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
                     } else {
                         drawIndicatorsText(canvas, formatValue(0), 0 + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
@@ -364,7 +363,7 @@ public class Slidr extends View {
             }
 
             {
-                final int color =  settings.paintIndicator.getColor();
+                final int color = settings.paintIndicator.getColor();
                 canvas.drawCircle(indicatorCenterX, this.barCenterY, indicatorRadius, settings.paintIndicator);
                 settings.paintIndicator.setColor(Color.WHITE);
                 canvas.drawCircle(indicatorCenterX, this.barCenterY, indicatorRadius * 0.85f, settings.paintIndicator);
@@ -673,6 +672,43 @@ public class Slidr extends View {
         }
 
 
+    }
+
+    private class NotifyListenerHandler extends Handler {
+        private boolean started = false;
+
+        public NotifyListenerHandler() {
+            super(Looper.getMainLooper());
+        }
+
+        public void start() {
+            if (!started) {
+                started = true;
+                sendEmptyMessage(0);
+            }
+        }
+
+        public void stop() {
+            sendEmptyMessage(1);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            if (msg.what == 0) {
+                if (listener != null && started) {
+                    listener.valueChanged(Slidr.this, currentValue);
+                    sendEmptyMessageDelayed(0, 500);
+                }
+            } else if (msg.what == 1) {
+                if (listener != null) {
+                    listener.valueChanged(Slidr.this, currentValue);
+                    removeMessages(0);
+                    started = false;
+                }
+            }
+        }
     }
 
     public class EurosFormatter implements Formatter {
