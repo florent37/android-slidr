@@ -16,11 +16,20 @@ public class MainActivity extends AppCompatActivity {
 
             slidr.setMax(500);
             slidr.addStep(new Slidr.Step("test", 250, Color.parseColor("#007E90")));
+            slidr.setTextMax("max\nvalue");
+
+
         }
         {
             final Slidr slidr = (Slidr) findViewById(R.id.slideure2);
 
             slidr.setMax(5000);
+            slidr.addStep(new Slidr.Step("test", 1500, Color.parseColor("#007E90"), Color.parseColor("#111111")));
+        }
+        {
+            final Slidr slidr = (Slidr) findViewById(R.id.slideure3);
+
+            slidr.setMax(2000);
             slidr.addStep(new Slidr.Step("test", 1500, Color.parseColor("#007E90")));
         }
     }

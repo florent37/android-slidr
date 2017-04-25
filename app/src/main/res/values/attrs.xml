@@ -9,7 +9,10 @@
         <attr name="slidr_step_colorizeAfterLast" format="boolean" />
         <attr name="slidr_step_colorAfterLast" format="color" />
         <attr name="slidr_draw_bubble" format="boolean" />
-        <attr name="slidr_modeRegion" format="boolean" />
+
+        <attr name="slidr_regions" format="boolean" />
+        <attr name="slidr_region_leftColor" format="color" />
+        <attr name="slidr_region_rightColor" format="color" />
     </declare-styleable>
 
 </resources>
