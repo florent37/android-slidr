@@ -29,11 +29,12 @@ import java.util.List;
 
 public class Slidr extends View {
 
-    final int BUBBLE_PADDING_HORIZONTAL = 35;
-    final int BUBBLE_PADDING_VERTICAL = 15;
+    private static final float DISTANCE_TEXT_BAR = 20;
+    private static final float BUBBLE_PADDING_HORIZONTAL = 35;
+    private static final float BUBBLE_PADDING_VERTICAL = 15;
 
-    final int BUBBLE_ARROW_HEIGHT = 20;
-    final int BUBBLE_ARROW_WIDTH = 40;
+    private static final float BUBBLE_ARROW_HEIGHT = 20;
+    private static final float BUBBLE_ARROW_WIDTH = 40;
     boolean moving = false;
     private Listener listener;
     private GestureDetectorCompat detector;
@@ -215,6 +216,10 @@ public class Slidr extends View {
         this.bubble.width = calculateBubbleTextWidth() + BUBBLE_PADDING_HORIZONTAL * 2f;
     }
 
+    private boolean isRegions(){
+        return settings.modeRegion || steps.isEmpty();
+    }
+
     private void updateValues() {
 
         barWidth = getWidth() - this.settings.paddingCorners * 2;
@@ -226,13 +231,33 @@ public class Slidr extends View {
             this.bubble.height = 0;
         }
 
+        this.barY = 0;
         if (settings.drawTextOnTop) {
-            final float spaceBetweenBubbleAndBar = 50;
-            this.barY = bubble.height + spaceBetweenBubbleAndBar + (settings.barHeight) / 2f;
+            barY += DISTANCE_TEXT_BAR;
+            if(isRegions()){
+                float topTextHeight = 0;
+                final String tmpTextLeft = formatRegionValue(0, 0);
+                final String tmpTextRight = formatRegionValue(1, 0);
+                topTextHeight = Math.max(topTextHeight, calculateTextMultilineHeight(tmpTextLeft, settings.paintTextTop));
+                topTextHeight = Math.max(topTextHeight, calculateTextMultilineHeight(tmpTextRight, settings.paintTextTop));
+
+                this.barY += topTextHeight + 3;
+            } else {
+                float topTextHeight = 0;
+
+                for (Step step : steps) {
+                    topTextHeight = Math.max(
+                            topTextHeight,
+                            calculateTextMultilineHeight(formatValue(step.value), settings.paintTextBottom)
+                    );
+                }
+                this.barY += topTextHeight;
+            }
         } else {
-            this.barY = bubble.height;
+            this.barY -= BUBBLE_ARROW_HEIGHT / 1.5f;
         }
 
+        this.barY += bubble.height;
 
         this.barCenterY = barY + settings.barHeight / 2f;
 
@@ -303,9 +328,14 @@ public class Slidr extends View {
             final float paddingLeft = settings.paddingCorners;
             final float paddingRight = settings.paddingCorners;
 
-            if (settings.modeRegion) {
-                settings.paintIndicator.setColor(settings.regionColorRight);
-                settings.paintBubble.setColor(settings.regionColorRight);
+            if (isRegions()) {
+                if(steps.isEmpty()){
+                    settings.paintIndicator.setColor(settings.regionColorLeft);
+                    settings.paintBubble.setColor(settings.regionColorLeft);
+                } else {
+                    settings.paintIndicator.setColor(settings.regionColorRight);
+                    settings.paintBubble.setColor(settings.regionColorRight);
+                }
             } else {
                 final Step stepBeforeCustor = findStepOfCustor();
                 if (stepBeforeCustor != null) {
@@ -334,8 +364,12 @@ public class Slidr extends View {
                 final float centerCircleRight = getWidth() - paddingRight;
 
                 //grey background
-                if (settings.modeRegion) {
-                    settings.paintBar.setColor(settings.regionColorRight);
+                if (isRegions()) {
+                    if(steps.isEmpty()){
+                        settings.paintBar.setColor(settings.colorBackground);
+                    } else {
+                        settings.paintBar.setColor(settings.regionColorRight);
+                    }
                 } else {
                     settings.paintBar.setColor(settings.colorBackground);
                 }
@@ -343,7 +377,7 @@ public class Slidr extends View {
                 canvas.drawCircle(centerCircleRight, barCenterY, radiusCorner, settings.paintBar);
                 canvas.drawRect(centerCircleLeft, barY, centerCircleRight, barY + settings.barHeight, settings.paintBar);
 
-                if (settings.modeRegion) {
+                if (isRegions()) {
                     settings.paintBar.setColor(settings.regionColorLeft);
 
                     canvas.drawCircle(centerCircleLeft, barCenterY, radiusCorner, settings.paintBar);
@@ -382,26 +416,48 @@ public class Slidr extends View {
 
             { //texts top (values)
                 if (settings.drawTextOnTop) {
-                    final float textY = barY - 30;
-                    if (settings.modeRegion) {
-                        final float leftValue = currentValue;
-                        final float rightValue = max - leftValue;
+                    final float textY = barY - DISTANCE_TEXT_BAR;
+                    if (isRegions()) {
+                        float leftValue;
+                        float rightValue;
 
-                        if (settings.region_textFollowRegionColor) {
+                        if(settings.regions_centerText){
+                            leftValue = currentValue;
+                            rightValue = max - leftValue;
+                        } else {
+                            leftValue = 0;
+                            rightValue = max;
+                        }
+
+                        if (settings.regions_textFollowRegionColor) {
                             settings.paintTextTop.setColor(settings.regionColorLeft);
                         }
-                        drawIndicatorsText(canvas, formatRegionValue(0, leftValue), settings.paintTextTop, (indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
 
-                        if (settings.region_textFollowRegionColor) {
+                        float textX;
+                        if(settings.regions_centerText){
+                            textX = (indicatorCenterX - paddingLeft) / 2f + paddingLeft;
+                        } else {
+                            textX = paddingLeft;
+                        }
+
+                        drawIndicatorsTextAbove(canvas, formatRegionValue(0, leftValue), settings.paintTextTop, textX, textY, Layout.Alignment.ALIGN_CENTER);
+
+                        if (settings.regions_textFollowRegionColor) {
                             settings.paintTextTop.setColor(settings.regionColorRight);
                         }
-                        drawIndicatorsText(canvas, formatRegionValue(1, rightValue), settings.paintTextTop, indicatorCenterX + (barWidth - indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
-                    } else {
-                        drawIndicatorsText(canvas, formatValue(0), settings.paintTextTop, 0 + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
-                        for (Step step : steps) {
-                            drawIndicatorsText(canvas, formatValue(step.value), settings.paintTextTop, step.xStart + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
+
+                        if(settings.regions_centerText){
+                            textX = indicatorCenterX + (barWidth - indicatorCenterX - paddingLeft) / 2f + paddingLeft;
+                        } else {
+                            textX = paddingLeft + barWidth;
                         }
-                        drawIndicatorsText(canvas, formatValue(max), settings.paintTextTop, canvas.getWidth(), textY, Layout.Alignment.ALIGN_CENTER);
+                        drawIndicatorsTextAbove(canvas, formatRegionValue(1, rightValue), settings.paintTextTop, textX, textY, Layout.Alignment.ALIGN_CENTER);
+                    } else {
+                        drawIndicatorsTextAbove(canvas, formatValue(0), settings.paintTextTop, 0 + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
+                        for (Step step : steps) {
+                            drawIndicatorsTextAbove(canvas, formatValue(step.value), settings.paintTextTop, step.xStart + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
+                        }
+                        drawIndicatorsTextAbove(canvas, formatValue(max), settings.paintTextTop, canvas.getWidth(), textY, Layout.Alignment.ALIGN_CENTER);
                     }
                 }
             }
@@ -507,8 +563,10 @@ public class Slidr extends View {
 
     }
 
-    private void drawIndicatorsText(Canvas canvas, String text, TextPaint paintText, float x, float y, Layout.Alignment alignment) {
-        y -= paintText.getTextSize();
+    private void drawIndicatorsTextAbove(Canvas canvas, String text, TextPaint paintText, float x, float y, Layout.Alignment alignment) {
+
+        final float textHeight = calculateTextMultilineHeight(text, paintText);
+        y -= textHeight;
 
         final int width = (int) paintText.measureText(text);
         if (x >= getWidth() - settings.paddingCorners) {
@@ -662,7 +720,8 @@ public class Slidr extends View {
         private boolean drawBubble = true;
         private boolean modeRegion = false;
         private boolean indicatorInside = false;
-        private boolean region_textFollowRegionColor = false;
+        private boolean regions_textFollowRegionColor = false;
+        private boolean regions_centerText = true;
 
         private int regionColorLeft = Color.parseColor("#007E90");
         private int regionColorRight = Color.parseColor("#ed5564");
@@ -727,14 +786,10 @@ public class Slidr extends View {
                 this.regionColorRight = a.getColor(R.styleable.Slidr_slidr_region_rightColor, regionColorRight);
 
                 this.indicatorInside = a.getBoolean(R.styleable.Slidr_slidr_indicator_inside, indicatorInside);
-                this.region_textFollowRegionColor = a.getBoolean(R.styleable.Slidr_slidr_region_textFollowRegionColor, region_textFollowRegionColor);
+                this.regions_textFollowRegionColor = a.getBoolean(R.styleable.Slidr_slidr_regions_textFollowRegionColor, regions_textFollowRegionColor);
+                this.regions_centerText = a.getBoolean(R.styleable.Slidr_slidr_regions_centerText, regions_centerText);
 
                 a.recycle();
-
-                if (modeRegion) {
-                    drawBubble = false;
-                    drawTextOnBottom = false;
-                }
             }
         }
 

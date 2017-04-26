@@ -12,9 +12,10 @@
         <attr name="slidr_draw_bubble" format="boolean" />
 
         <attr name="slidr_regions" format="boolean" />
+        <attr name="slidr_regions_centerText" format="boolean" />
+        <attr name="slidr_regions_textFollowRegionColor" format="boolean" />
         <attr name="slidr_region_leftColor" format="color" />
         <attr name="slidr_region_rightColor" format="color" />
-        <attr name="slidr_region_textFollowRegionColor" format="boolean" />
 
         <attr name="slidr_step_drawLine" format="boolean" />
 
