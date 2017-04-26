@@ -54,6 +54,7 @@ public class Slidr extends View {
 
     private String textMax = "";
     private NotifyListenerHandler notifyListenerHandler = new NotifyListenerHandler();
+    private int calculatedHieght = 0;
 
     public Slidr(Context context) {
         this(context, null);
@@ -95,11 +96,11 @@ public class Slidr extends View {
         this.settings.init(context, attrs);
     }
 
+    //region getters
+
     public void setListener(Listener listener) {
         this.listener = listener;
     }
-
-    //region getters
 
     private float dpToPx(int size) {
         return size * getResources().getDisplayMetrics().density;
@@ -122,13 +123,13 @@ public class Slidr extends View {
         update();
     }
 
+    //endregion
+
     public void addStep(List<Step> steps) {
         this.steps.addAll(steps);
         Collections.sort(steps);
         update();
     }
-
-    //endregion
 
     public void addStep(Step step) {
         this.steps.add(step);
@@ -204,11 +205,19 @@ public class Slidr extends View {
         updateValues();
     }
 
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        updateValues();
+        super.onMeasure(widthMeasureSpec,
+                MeasureSpec.makeMeasureSpec(calculatedHieght, MeasureSpec.EXACTLY));
+    }
+
     private void updateBubbleWidth() {
         this.bubble.width = calculateBubbleTextWidth() + BUBBLE_PADDING_HORIZONTAL * 2f;
     }
 
     private void updateValues() {
+
         barWidth = getWidth() - this.settings.paddingCorners * 2;
 
         if (settings.drawBubble) {
@@ -217,6 +226,7 @@ public class Slidr extends View {
         } else {
             this.bubble.height = 0;
         }
+
         if (settings.drawTextOnTop) {
             final float spaceBetweenBubbleAndBar = 50;
             this.barY = bubble.height + spaceBetweenBubbleAndBar + (settings.barHeight) / 2f;
@@ -227,7 +237,7 @@ public class Slidr extends View {
 
         this.barCenterY = barY + settings.barHeight / 2f;
 
-        if(settings.indicatorInside){
+        if (settings.indicatorInside) {
             this.indicatorRadius = (int) (settings.barHeight * .45f);
         } else {
             this.indicatorRadius = (int) (settings.barHeight * .9f);
@@ -239,12 +249,30 @@ public class Slidr extends View {
         }
 
         indicatorX = currentValue / max * getWidth();
+
+        calculatedHieght = (int) (barCenterY + indicatorRadius);
+
+        float bottomTextHeight = 0;
+        if (!TextUtils.isEmpty(textMax)) {
+            bottomTextHeight = calculateTextMultilineHeight(textMax, settings.paintTextBottom);
+        }
+        for (Step step : steps) {
+            bottomTextHeight = Math.max(
+                    bottomTextHeight,
+                    calculateTextMultilineHeight(step.name, settings.paintTextBottom)
+            );
+        }
+
+        calculatedHieght += bottomTextHeight;
+
+        calculatedHieght += 10; //padding bottom
+
     }
 
     private Step findStepBeforeCustor() {
         for (int i = steps.size() - 1; i >= 0; i--) {
             final Step step = steps.get(i);
-            if (currentValue > step.value) {
+            if (currentValue >= step.value) {
                 return step;
             }
             break;
@@ -255,7 +283,7 @@ public class Slidr extends View {
     private Step findStepOfCustor() {
         for (int i = 0; i < steps.size(); ++i) {
             final Step step = steps.get(i);
-            if (currentValue < step.value) {
+            if (currentValue <= step.value) {
                 return step;
             }
             break;
@@ -360,12 +388,12 @@ public class Slidr extends View {
                         final float leftValue = currentValue;
                         final float rightValue = max - leftValue;
 
-                        if(settings.region_textFollowRegionColor){
+                        if (settings.region_textFollowRegionColor) {
                             settings.paintTextTop.setColor(settings.regionColorLeft);
                         }
                         drawIndicatorsText(canvas, formatValue(leftValue), settings.paintTextTop, (indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
 
-                        if(settings.region_textFollowRegionColor){
+                        if (settings.region_textFollowRegionColor) {
                             settings.paintTextTop.setColor(settings.regionColorRight);
                         }
                         drawIndicatorsText(canvas, formatValue(rightValue), settings.paintTextTop, indicatorCenterX + (barWidth - indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
@@ -384,7 +412,7 @@ public class Slidr extends View {
                 final float bottomTextY = barY + settings.barHeight + 15;
 
                 for (Step step : steps) {
-                    if(settings.step_drawLines) {
+                    if (settings.step_drawLines) {
                         canvas.drawLine(step.xStart + paddingLeft, barY - settings.barHeight / 4f, step.xStart + paddingLeft, barY + settings.barHeight + settings.barHeight / 4f, settings.paintStep);
                     }
 
@@ -501,6 +529,11 @@ public class Slidr extends View {
         return textPaint.measureText(max.toString());
     }
     */
+
+
+    private float calculateTextMultilineHeight(String text, TextPaint textPaint) {
+        return text.split("\n").length * textPaint.getTextSize();
+    }
 
     private float calculateBubbleTextWidth() {
         final String bubbleText = formatValue(getCurrentValue());
@@ -726,13 +759,13 @@ public class Slidr extends View {
 
         public void setTextTopSize(int textSize) {
             this.textTopSize = textSize;
-            this.paintTextTop.setTextSize(dpToPx(textSize));
+            this.paintTextTop.setTextSize(textSize);
             slidr.update();
         }
 
         public void setTextBottomSize(int textSize) {
             this.textBottomSize = textSize;
-            this.paintTextBottom.setTextSize(dpToPx(textSize));
+            this.paintTextBottom.setTextSize(textSize);
             slidr.update();
         }
 
