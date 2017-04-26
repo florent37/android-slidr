@@ -21,6 +21,7 @@ import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +38,7 @@ public class Slidr extends View {
 
     final int BUBBLE_ARROW_HEIGHT = 20;
     final int BUBBLE_ARROW_WIDTH = 40;
-
+    boolean moving = false;
     private Listener listener;
     private GestureDetectorCompat detector;
     private Settings settings;
@@ -49,8 +50,7 @@ public class Slidr extends View {
     private float indicatorX;
     private int indicatorRadius;
     private float barCenterY;
-    private float bubbleHeight;
-    private float bubbleWidth;
+    private Bubble bubble = new Bubble();
     private Formatter formatter = new EurosFormatter();
 
     private String textMax = "";
@@ -70,9 +70,26 @@ public class Slidr extends View {
         init(context, attrs);
     }
 
+    private void onClick(MotionEvent e) {
+        if (bubble.clicked(e)) {
+            Toast.makeText(getContext(), "clicked", Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void init(Context context, @Nullable AttributeSet attrs) {
         detector = new GestureDetectorCompat(context, new GestureDetector.SimpleOnGestureListener() {
             //some callbacks
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                onClick(e);
+                return super.onSingleTapConfirmed(e);
+            }
+
+            @Override
+            public boolean onContextClick(MotionEvent e) {
+                return super.onContextClick(e);
+            }
         });
 
         this.settings = new Settings(this);
@@ -135,23 +152,31 @@ public class Slidr extends View {
                 case MotionEvent.ACTION_CANCEL:
                     notifyListenerHandler.stop();
                     actionUp();
+                    moving = false;
                     break;
                 case MotionEvent.ACTION_DOWN:
+                    final float evY = event.getY();
+                    if (evY <= barY || evY >= (barY + barWidth)) {
+                        return true;
+                    } else {
+                        moving = true;
+                    }
                 case MotionEvent.ACTION_MOVE: {
-                    notifyListenerHandler.start();
+                    if (moving) {
+                        float evX = event.getX();
+                        notifyListenerHandler.start();
 
-                    float evX = event.getX();
+                        evX = evX - settings.paddingCorners;
+                        if (evX < 0) {
+                            evX = 0;
+                        }
+                        if (evX > barWidth) {
+                            evX = barWidth;
+                        }
+                        this.indicatorX = evX;
 
-                    evX = evX - settings.paddingCorners;
-                    if (evX < 0) {
-                        evX = 0;
+                        update();
                     }
-                    if (evX > barWidth) {
-                        evX = barWidth;
-                    }
-                    this.indicatorX = evX;
-
-                    update();
                 }
                 break;
             }
@@ -181,7 +206,7 @@ public class Slidr extends View {
     }
 
     private void updateBubbleWidth() {
-        this.bubbleWidth = calculateBubbleTextWidth() + BUBBLE_PADDING_HORIZONTAL * 2f;
+        this.bubble.width = calculateBubbleTextWidth() + BUBBLE_PADDING_HORIZONTAL * 2f;
     }
 
     private void updateValues() {
@@ -189,15 +214,15 @@ public class Slidr extends View {
 
         if (settings.drawBubble) {
             updateBubbleWidth();
-            this.bubbleHeight = dpToPx(settings.textSizeBubbleCurrent) + BUBBLE_PADDING_VERTICAL * 2f + BUBBLE_ARROW_HEIGHT;
+            this.bubble.height = dpToPx(settings.textSizeBubbleCurrent) + BUBBLE_PADDING_VERTICAL * 2f + BUBBLE_ARROW_HEIGHT;
         } else {
-            this.bubbleHeight = 0;
+            this.bubble.height = 0;
         }
         if (settings.drawTextOnTop) {
             final float spaceBetweenBubbleAndBar = 50;
-            this.barY = bubbleHeight + spaceBetweenBubbleAndBar + (settings.barHeight) / 2f;
+            this.barY = bubble.height + spaceBetweenBubbleAndBar + (settings.barHeight) / 2f;
         } else {
-            this.barY = bubbleHeight;
+            this.barY = bubble.height;
         }
 
 
@@ -375,10 +400,14 @@ public class Slidr extends View {
                 if (settings.drawBubble) {
                     float bubbleCenterX = indicatorCenterX;
                     float trangleCenterX = indicatorCenterX;
-                    if (bubbleCenterX > canvas.getWidth() - bubbleWidth / 2f) {
-                        bubbleCenterX = canvas.getWidth() - bubbleWidth / 2f;
-                    } else if (bubbleCenterX - bubbleWidth / 2f < 0) {
-                        bubbleCenterX = bubbleWidth / 2f;
+
+                    bubble.x = bubbleCenterX - bubble.width / 2f;
+                    bubble.y = 0;
+
+                    if (bubbleCenterX > canvas.getWidth() - bubble.width / 2f) {
+                        bubbleCenterX = canvas.getWidth() - bubble.width / 2f;
+                    } else if (bubbleCenterX - bubble.width / 2f < 0) {
+                        bubbleCenterX = bubble.width / 2f;
                     }
                     drawBubble(canvas, bubbleCenterX, trangleCenterX, 0);
                 }
@@ -430,21 +459,6 @@ public class Slidr extends View {
 
     }
 
-    /*
-    private float calculateTextMultilineWidth(String text, TextPaint textPaint) {
-        int maxLength = -1;
-        CharSequence max = null;
-        for (CharSequence line : text.split("\n")) {
-            final int lineLength = line.length();
-            if (lineLength > maxLength) {
-                maxLength = lineLength;
-                max = line;
-            }
-        }
-        return textPaint.measureText(max.toString());
-    }
-    */
-
     private void drawIndicatorsText(Canvas canvas, String text, float x, float y, Layout.Alignment alignment) {
         y -= settings.paintText.getTextSize();
 
@@ -460,14 +474,29 @@ public class Slidr extends View {
         drawText(canvas, text, x, y, settings.paintText, alignment);
     }
 
+    /*
+    private float calculateTextMultilineWidth(String text, TextPaint textPaint) {
+        int maxLength = -1;
+        CharSequence max = null;
+        for (CharSequence line : text.split("\n")) {
+            final int lineLength = line.length();
+            if (lineLength > maxLength) {
+                maxLength = lineLength;
+                max = line;
+            }
+        }
+        return textPaint.measureText(max.toString());
+    }
+    */
+
     private float calculateBubbleTextWidth() {
         final String bubbleText = formatValue(getCurrentValue());
         return settings.paintBubbleTextCurrent.measureText(bubbleText);
     }
 
     private void drawBubble(Canvas canvas, float centerX, float triangleCenterX, float y) {
-        final float width = this.bubbleWidth;
-        final float height = this.bubbleHeight;
+        final float width = this.bubble.width;
+        final float height = this.bubble.height;
 
         canvas.save();
         {
@@ -672,6 +701,18 @@ public class Slidr extends View {
         }
 
 
+    }
+
+    private class Bubble {
+        private float height;
+        private float width;
+        private float x;
+        private float y;
+
+        public boolean clicked(MotionEvent e) {
+            return e.getX() >= x && e.getX() <= x + width
+                    && e.getY() >= y && e.getY() < y + height;
+        }
     }
 
     private class NotifyListenerHandler extends Handler {
