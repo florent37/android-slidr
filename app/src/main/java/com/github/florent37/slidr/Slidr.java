@@ -6,9 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.GestureDetectorCompat;
@@ -50,10 +47,10 @@ public class Slidr extends View {
     private int indicatorRadius;
     private float barCenterY;
     private Bubble bubble = new Bubble();
-    private Formatter formatter = new EurosFormatter();
+    private TextFormatter textFormatter = new EurosTextFormatter();
+    private RegionTextFormatter regionTextFormatter = null;
 
     private String textMax = "";
-    private NotifyListenerHandler notifyListenerHandler = new NotifyListenerHandler();
     private int calculatedHieght = 0;
 
     public Slidr(Context context) {
@@ -72,7 +69,7 @@ public class Slidr extends View {
 
     private void onClick(MotionEvent e) {
         if (bubble.clicked(e) && listener != null) {
-            listener.bubbleClicked();
+            listener.bubbleClicked(this);
         }
     }
 
@@ -150,7 +147,6 @@ public class Slidr extends View {
             switch (action) {
                 case MotionEvent.ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    notifyListenerHandler.stop();
                     actionUp();
                     moving = false;
                     break;
@@ -164,7 +160,6 @@ public class Slidr extends View {
                 case MotionEvent.ACTION_MOVE: {
                     if (moving) {
                         float evX = event.getX();
-                        notifyListenerHandler.start();
 
                         evX = evX - settings.paddingCorners;
                         if (evX < 0) {
@@ -193,7 +188,11 @@ public class Slidr extends View {
         if (barWidth > 0f) {
             float currentPercent = indicatorX / barWidth;
             currentValue = currentPercent * max;
-            //Log.d("xStart", currentPercent + " " + currentValue);
+
+            if (listener != null) {
+                listener.valueChanged(Slidr.this, currentValue);
+            }
+
             updateBubbleWidth();
         }
         postInvalidate();
@@ -391,12 +390,12 @@ public class Slidr extends View {
                         if (settings.region_textFollowRegionColor) {
                             settings.paintTextTop.setColor(settings.regionColorLeft);
                         }
-                        drawIndicatorsText(canvas, formatValue(leftValue), settings.paintTextTop, (indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
+                        drawIndicatorsText(canvas, formatRegionValue(0, leftValue), settings.paintTextTop, (indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
 
                         if (settings.region_textFollowRegionColor) {
                             settings.paintTextTop.setColor(settings.regionColorRight);
                         }
-                        drawIndicatorsText(canvas, formatValue(rightValue), settings.paintTextTop, indicatorCenterX + (barWidth - indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
+                        drawIndicatorsText(canvas, formatRegionValue(1, rightValue), settings.paintTextTop, indicatorCenterX + (barWidth - indicatorCenterX - paddingLeft) / 2f + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
                     } else {
                         drawIndicatorsText(canvas, formatValue(0), settings.paintTextTop, 0 + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
                         for (Step step : steps) {
@@ -459,7 +458,15 @@ public class Slidr extends View {
     }
 
     private String formatValue(float value) {
-        return formatter.format(value);
+        return textFormatter.format(value);
+    }
+
+    private String formatRegionValue(int region, float value) {
+        if (regionTextFormatter != null) {
+            return regionTextFormatter.format(region, value);
+        } else {
+            return formatValue(value);
+        }
     }
 
     private void drawText(Canvas canvas, String text, float x, float y, TextPaint paint, Layout.Alignment aligment) {
@@ -580,14 +587,28 @@ public class Slidr extends View {
 
     }
 
+    public void setTextFormatter(TextFormatter textFormatter) {
+        this.textFormatter = textFormatter;
+        update();
+    }
+
+    public void setRegionTextFormatter(RegionTextFormatter regionTextFormatter) {
+        this.regionTextFormatter = regionTextFormatter;
+        update();
+    }
+
     public interface Listener {
         void valueChanged(Slidr slidr, float currentValue);
 
-        void bubbleClicked();
+        void bubbleClicked(Slidr slidr);
     }
 
-    public interface Formatter {
+    public interface TextFormatter {
         String format(float value);
+    }
+
+    public interface RegionTextFormatter {
+        String format(int region, float value);
     }
 
     public static class Step implements Comparable<Step> {
@@ -773,7 +794,6 @@ public class Slidr extends View {
             return size * slidr.getResources().getDisplayMetrics().density;
         }
 
-
     }
 
     private class Bubble {
@@ -788,44 +808,7 @@ public class Slidr extends View {
         }
     }
 
-    private class NotifyListenerHandler extends Handler {
-        private boolean started = false;
-
-        public NotifyListenerHandler() {
-            super(Looper.getMainLooper());
-        }
-
-        public void start() {
-            if (!started) {
-                started = true;
-                sendEmptyMessage(0);
-            }
-        }
-
-        public void stop() {
-            sendEmptyMessage(1);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            super.handleMessage(msg);
-
-            if (msg.what == 0) {
-                if (listener != null && started) {
-                    listener.valueChanged(Slidr.this, currentValue);
-                    sendEmptyMessageDelayed(0, 500);
-                }
-            } else if (msg.what == 1) {
-                if (listener != null) {
-                    listener.valueChanged(Slidr.this, currentValue);
-                    removeMessages(0);
-                    started = false;
-                }
-            }
-        }
-    }
-
-    public class EurosFormatter implements Formatter {
+    public class EurosTextFormatter implements TextFormatter {
 
         @Override
         public String format(float value) {

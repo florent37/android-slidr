@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 @Override
-                public void bubbleClicked() {
+                public void bubbleClicked(Slidr slidr) {
                     Toast.makeText(getBaseContext(), "click", Toast.LENGTH_SHORT).show();
                 }
             });
@@ -39,6 +39,19 @@ public class MainActivity extends AppCompatActivity {
 
             slidr.setMax(5000);
             slidr.setCurrentValue(5000);
+            slidr.addStep(new Slidr.Step("test", 1500, Color.parseColor("#007E90"), Color.parseColor("#111111")));
+        }
+
+        {
+            final Slidr slidr = (Slidr) findViewById(R.id.slideure_regions);
+
+            slidr.setMax(3000);
+            slidr.setRegionTextFormatter(new Slidr.RegionTextFormatter() {
+                @Override
+                public String format(int region, float value) {
+                    return String.format("region %d : %d", region, (int)value);
+                }
+            });
             slidr.addStep(new Slidr.Step("test", 1500, Color.parseColor("#007E90"), Color.parseColor("#111111")));
         }
 

@@ -15,6 +15,7 @@
         app:slidr_backgroundColor="#ed5564" />
 
     <com.github.florent37.slidr.Slidr
+        android:id="@+id/slideure_regions"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
