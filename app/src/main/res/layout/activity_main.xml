@@ -11,7 +11,7 @@
         android:id="@+id/slideure"
         android:layout_width="250dp"
         android:layout_height="130dp"
-        app:slidr_colorbackground="#ed5564"
+        app:slidr_backgroundColor="#ed5564"
         android:layout_gravity="center" />
 
     <com.github.florent37.slidr.Slidr
@@ -28,8 +28,8 @@
         android:layout_width="250dp"
         android:layout_height="120dp"
         app:slidr_step_colorizeAfterLast="true"
-        app:slidr_drawTextOnBottom="false"
-        app:slidr_drawTextOnTop="false"
+        app:slidr_textBottom_visible="false"
+        app:slidr_textTop_visible="false"
         app:slidr_barHeight="10dp"
         android:layout_gravity="center" />
 
@@ -38,6 +38,16 @@
         android:layout_width="250dp"
         android:layout_height="120dp"
         app:slidr_barHeight="10dp"
+        android:layout_gravity="center" />
+
+    <com.github.florent37.slidr.Slidr
+        android:layout_width="250dp"
+        android:layout_height="120dp"
+        app:slidr_barHeight="30dp"
+        app:slidr_regions="true"
+        app:slidr_indicator_inside="true"
+        app:slidr_textTop_size="16sp"
+        app:slidr_region_textFollowRegionColor="true"
         android:layout_gravity="center" />
 
 </LinearLayout>

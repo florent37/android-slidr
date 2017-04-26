@@ -3,16 +3,22 @@
 
     <declare-styleable name="Slidr">
         <attr name="slidr_barHeight" format="dimension" />
-        <attr name="slidr_drawTextOnTop" format="boolean" />
-        <attr name="slidr_drawTextOnBottom" format="boolean" />
-        <attr name="slidr_colorbackground" format="color" />
+        <attr name="slidr_textTop_visible" format="boolean" />
+        <attr name="slidr_textTop_size" format="dimension" />
+        <attr name="slidr_textBottom_visible" format="boolean" />
+        <attr name="slidr_textBottom_size" format="dimension" />
+        <attr name="slidr_backgroundColor" format="color" />
         <attr name="slidr_step_colorizeAfterLast" format="boolean" />
-        <attr name="slidr_step_colorAfterLast" format="color" />
         <attr name="slidr_draw_bubble" format="boolean" />
 
         <attr name="slidr_regions" format="boolean" />
         <attr name="slidr_region_leftColor" format="color" />
         <attr name="slidr_region_rightColor" format="color" />
+        <attr name="slidr_region_textFollowRegionColor" format="boolean" />
+
+        <attr name="slidr_step_drawLine" format="boolean" />
+
+        <attr name="slidr_indicator_inside" format="boolean" />
     </declare-styleable>
 
 </resources>

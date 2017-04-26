@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -23,6 +24,11 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void valueChanged(Slidr slidr, float currentValue) {
                     Log.d("slidr", ""+currentValue);
+                }
+
+                @Override
+                public void bubbleClicked() {
+                    Toast.makeText(getBaseContext(), "click", Toast.LENGTH_SHORT).show();
                 }
             });
 
