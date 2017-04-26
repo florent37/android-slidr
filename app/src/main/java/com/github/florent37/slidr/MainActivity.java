@@ -33,12 +33,15 @@ public class MainActivity extends AppCompatActivity {
             });
 
         }
+
         {
             final Slidr slidr = (Slidr) findViewById(R.id.slideure2);
 
             slidr.setMax(5000);
+            slidr.setCurrentValue(5000);
             slidr.addStep(new Slidr.Step("test", 1500, Color.parseColor("#007E90"), Color.parseColor("#111111")));
         }
+
         {
             final Slidr slidr = (Slidr) findViewById(R.id.slideure3);
 

@@ -238,7 +238,7 @@ public class Slidr extends View {
         this.barCenterY = barY + settings.barHeight / 2f;
 
         if (settings.indicatorInside) {
-            this.indicatorRadius = (int) (settings.barHeight * .45f);
+            this.indicatorRadius = (int) (settings.barHeight * .5f);
         } else {
             this.indicatorRadius = (int) (settings.barHeight * .9f);
         }
@@ -248,7 +248,7 @@ public class Slidr extends View {
             step.xStart = stoppoverPercent * barWidth;
         }
 
-        indicatorX = currentValue / max * getWidth();
+        indicatorX = currentValue / max * barWidth;
 
         calculatedHieght = (int) (barCenterY + indicatorRadius);
 
