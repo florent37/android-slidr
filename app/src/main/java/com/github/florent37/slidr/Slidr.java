@@ -21,7 +21,6 @@ import android.util.AttributeSet;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,8 +70,8 @@ public class Slidr extends View {
     }
 
     private void onClick(MotionEvent e) {
-        if (bubble.clicked(e)) {
-            Toast.makeText(getContext(), "clicked", Toast.LENGTH_LONG).show();
+        if (bubble.clicked(e) && listener != null) {
+            listener.bubbleClicked();
         }
     }
 
@@ -536,6 +535,8 @@ public class Slidr extends View {
 
     public interface Listener {
         void valueChanged(Slidr slidr, float currentValue);
+
+        void bubbleClicked();
     }
 
     public interface Formatter {
