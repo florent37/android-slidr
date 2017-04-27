@@ -136,6 +136,11 @@ public class Slidr extends View {
         update();
     }
 
+    public void clearSteps() {
+        this.steps.clear();
+        update();
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return handleTouch(event);
@@ -218,7 +223,7 @@ public class Slidr extends View {
         this.bubble.width = calculateBubbleTextWidth() + BUBBLE_PADDING_HORIZONTAL * 2f;
     }
 
-    private boolean isRegions(){
+    private boolean isRegions() {
         return settings.modeRegion || steps.isEmpty();
     }
 
@@ -238,7 +243,7 @@ public class Slidr extends View {
         this.barY = 0;
         if (settings.drawTextOnTop) {
             barY += DISTANCE_TEXT_BAR;
-            if(isRegions()){
+            if (isRegions()) {
                 float topTextHeight = 0;
                 final String tmpTextLeft = formatRegionValue(0, 0);
                 final String tmpTextRight = formatRegionValue(1, 0);
@@ -333,8 +338,9 @@ public class Slidr extends View {
             final float paddingLeft = settings.paddingCorners;
             final float paddingRight = settings.paddingCorners;
 
+
             if (isRegions()) {
-                if(steps.isEmpty()){
+                if (steps.isEmpty()) {
                     settings.paintIndicator.setColor(settings.regionColorLeft);
                     settings.paintBubble.setColor(settings.regionColorLeft);
                 } else {
@@ -370,7 +376,7 @@ public class Slidr extends View {
 
                 //grey background
                 if (isRegions()) {
-                    if(steps.isEmpty()){
+                    if (steps.isEmpty()) {
                         settings.paintBar.setColor(settings.colorBackground);
                     } else {
                         settings.paintBar.setColor(settings.regionColorRight);
@@ -397,7 +403,11 @@ public class Slidr extends View {
                         }
 
                         final float x = step.xStart + paddingLeft;
-                        canvas.drawRect(lastX, barY, x, barY + settings.barHeight, settings.paintBar);
+                        if (!settings.step_colorizeOnlyBeforeIndicator) {
+                            canvas.drawRect(lastX, barY, x, barY + settings.barHeight, settings.paintBar);
+                        } else {
+                            canvas.drawRect(lastX, barY, Math.min(x, indicatorCenterX), barY + settings.barHeight, settings.paintBar);
+                        }
                         lastX = x;
 
                         first = false;
@@ -426,7 +436,7 @@ public class Slidr extends View {
                         float leftValue;
                         float rightValue;
 
-                        if(settings.regions_centerText){
+                        if (settings.regions_centerText) {
                             leftValue = currentValue;
                             rightValue = max - leftValue;
                         } else {
@@ -439,7 +449,7 @@ public class Slidr extends View {
                         }
 
                         float textX;
-                        if(settings.regions_centerText){
+                        if (settings.regions_centerText) {
                             textX = (indicatorCenterX - paddingLeft) / 2f + paddingLeft;
                         } else {
                             textX = paddingLeft;
@@ -451,7 +461,7 @@ public class Slidr extends View {
                             settings.paintTextTop.setColor(settings.regionColorRight);
                         }
 
-                        if(settings.regions_centerText){
+                        if (settings.regions_centerText) {
                             textX = indicatorCenterX + (barWidth - indicatorCenterX - paddingLeft) / 2f + paddingLeft;
                         } else {
                             textX = paddingLeft + barWidth;
@@ -723,6 +733,8 @@ public class Slidr extends View {
 
         private boolean step_colorizeAfterLast = false;
         private boolean step_drawLines = true;
+        private boolean step_colorizeOnlyBeforeIndicator = true;
+
         private boolean drawTextOnTop = true;
         private boolean drawTextOnBottom = true;
         private boolean drawBubble = true;
@@ -778,8 +790,10 @@ public class Slidr extends View {
             if (attrs != null) {
                 final TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.Slidr);
                 setColorBackground(a.getColor(R.styleable.Slidr_slidr_backgroundColor, colorBackground));
+
                 this.step_colorizeAfterLast = a.getBoolean(R.styleable.Slidr_slidr_step_colorizeAfterLast, step_colorizeAfterLast);
                 this.step_drawLines = a.getBoolean(R.styleable.Slidr_slidr_step_drawLine, step_drawLines);
+                this.step_colorizeOnlyBeforeIndicator = a.getBoolean(R.styleable.Slidr_slidr_step_colorizeOnlyBeforeIndicator, step_colorizeOnlyBeforeIndicator);
 
                 this.drawTextOnTop = a.getBoolean(R.styleable.Slidr_slidr_textTop_visible, drawTextOnTop);
                 setTextTopSize(a.getDimensionPixelSize(R.styleable.Slidr_slidr_textTop_size, (int) dpToPx(textTopSize)));

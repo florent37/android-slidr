@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
-        /*
 
         {
             final Slidr slidr = (Slidr) findViewById(R.id.slideure2);
@@ -65,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
                 slidr.addStep(new Slidr.Step("test", 1500, Color.parseColor("#007E90")));
             }
         }
-        */
     }
 }
 
