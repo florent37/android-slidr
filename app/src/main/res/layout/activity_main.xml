@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:padding="15dp"
     tools:context="com.github.florent37.slidr.MainActivity">
 
     <com.github.florent37.slidr.Slidr
@@ -13,6 +14,7 @@
         android:layout_gravity="center"
         app:slidr_barHeight="78dp"
         app:slidr_draw_bubble="false"
+        app:slidr_textTop_visible="false"
         app:slidr_indicator_inside="true"
         app:slidr_regions="true"
         app:slidr_regions_centerText="true"

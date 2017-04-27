@@ -263,7 +263,9 @@ public class Slidr extends View {
                 this.barY += topTextHeight;
             }
         } else {
-            this.barY -= BUBBLE_ARROW_HEIGHT / 1.5f;
+            if(settings.drawBubble) {
+                this.barY -= BUBBLE_ARROW_HEIGHT / 1.5f;
+            }
         }
 
         this.barY += bubble.height;
