@@ -222,6 +222,8 @@ public class Slidr extends View {
 
     private void updateValues() {
 
+        settings.paddingCorners = settings.barHeight / 2f;
+
         barWidth = getWidth() - this.settings.paddingCorners * 2;
 
         if (settings.drawBubble) {
@@ -325,6 +327,7 @@ public class Slidr extends View {
 
         canvas.save();
         {
+
             final float paddingLeft = settings.paddingCorners;
             final float paddingRight = settings.paddingCorners;
 
@@ -711,7 +714,7 @@ public class Slidr extends View {
         private int textBottomSize = 12;
         private int textSizeBubbleCurrent = 16;
         private float barHeight = 35;
-        private float paddingCorners = 60;
+        private float paddingCorners;
 
         private boolean step_colorizeAfterLast = false;
         private boolean step_drawLines = true;

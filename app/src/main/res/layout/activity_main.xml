@@ -8,6 +8,20 @@
     tools:context="com.github.florent37.slidr.MainActivity">
 
     <com.github.florent37.slidr.Slidr
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        app:slidr_barHeight="78dp"
+        app:slidr_indicator_inside="true"
+        app:slidr_regions_textFollowRegionColor="true"
+        app:slidr_regions_centerText="true"
+        app:slidr_regions="true"
+        app:slidr_draw_bubble="false"
+        app:slidr_textTop_size="16sp" />
+
+    <!--
+
+    <com.github.florent37.slidr.Slidr
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -51,14 +65,6 @@
         android:layout_margin="10dp"
         app:slidr_step_drawLine="false" />
 
-    <com.github.florent37.slidr.Slidr
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        app:slidr_barHeight="30dp"
-        app:slidr_indicator_inside="true"
-        app:slidr_regions_textFollowRegionColor="true"
-        app:slidr_regions_centerText="true"
-        app:slidr_regions="true"
-        app:slidr_textTop_size="16sp" />
+        -->
+
 </LinearLayout>
