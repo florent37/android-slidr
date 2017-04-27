@@ -41,6 +41,7 @@ public class Slidr extends View {
     private Settings settings;
     private int max = 1000;
     private float currentValue = 0;
+    private float oldValue = Float.MIN_VALUE;
     private List<Step> steps = new ArrayList<>();
     private float barY;
     private float barWidth;
@@ -190,7 +191,8 @@ public class Slidr extends View {
             float currentPercent = indicatorX / barWidth;
             currentValue = currentPercent * max;
 
-            if (listener != null) {
+            if (listener != null && oldValue != currentValue) {
+                oldValue = currentValue;
                 listener.valueChanged(Slidr.this, currentValue);
             }
 
@@ -222,7 +224,7 @@ public class Slidr extends View {
 
     private void updateValues() {
 
-        settings.paddingCorners = settings.barHeight / 2f;
+        settings.paddingCorners = settings.barHeight;
 
         barWidth = getWidth() - this.settings.paddingCorners * 2;
 
@@ -498,7 +500,7 @@ public class Slidr extends View {
             {
                 if (settings.drawBubble) {
                     float bubbleCenterX = indicatorCenterX;
-                    float trangleCenterX = indicatorCenterX;
+                    float trangleCenterX;
 
                     bubble.x = bubbleCenterX - bubble.width / 2f;
                     bubble.y = 0;
@@ -508,6 +510,9 @@ public class Slidr extends View {
                     } else if (bubbleCenterX - bubble.width / 2f < 0) {
                         bubbleCenterX = bubble.width / 2f;
                     }
+
+                    trangleCenterX = (bubbleCenterX + indicatorCenterX) / 2f;
+
                     drawBubble(canvas, bubbleCenterX, trangleCenterX, 0);
                 }
             }

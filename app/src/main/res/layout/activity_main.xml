@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.github.florent37.slidr.MainActivity">
+    <!--
 
     <com.github.florent37.slidr.Slidr
         android:layout_width="match_parent"
@@ -18,22 +19,24 @@
         app:slidr_regions="true"
         app:slidr_draw_bubble="false"
         app:slidr_textTop_size="16sp" />
-
-    <!--
+-->
 
     <com.github.florent37.slidr.Slidr
+        android:id="@+id/slideure"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        app:slidr_step_colorizeAfterLast="true"
+        android:layout_gravity="center" />
+
+
+    <!--
+<com.github.florent37.slidr.Slidr
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         app:slidr_regions_centerText="false"
         app:slidr_region_leftColor="#40ae3a" />
 
-    <com.github.florent37.slidr.Slidr
-        android:id="@+id/slideure"
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        app:slidr_backgroundColor="#ed5564" />
 
     <com.github.florent37.slidr.Slidr
         android:id="@+id/slideure_regions"

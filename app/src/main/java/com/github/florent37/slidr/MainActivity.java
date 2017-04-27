@@ -13,12 +13,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /*
         {
             final Slidr slidr = (Slidr) findViewById(R.id.slideure);
             if (slidr != null) {
                 slidr.setMax(500);
-                slidr.addStep(new Slidr.Step("test", 250, Color.parseColor("#007E90")));
+                slidr.addStep(new Slidr.Step("test", 250, Color.parseColor("#007E90"), Color.RED));
                 slidr.setTextMax("max\nvalue");
                 slidr.setCurrentValue(300);
                 slidr.setListener(new Slidr.Listener() {
@@ -35,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
+        /*
 
         {
             final Slidr slidr = (Slidr) findViewById(R.id.slideure2);
