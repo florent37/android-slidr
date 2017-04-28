@@ -566,6 +566,9 @@ public class Slidr extends View {
                 if (aligment == Layout.Alignment.ALIGN_CENTER) {
                     lineX -= lineWidth / 2f;
                 }
+                if(lineX < 0){
+                    lineX = 0;
+                }
 
                 final float right = lineX + lineWidth;
                 if (right > canvas.getWidth()) {
@@ -595,6 +598,14 @@ public class Slidr extends View {
             x = width / 2f;
         } else {
             x = (x - width / 2f);
+        }
+
+        if(x < 0){
+            x = 0;
+        }
+
+        if(x + width > getWidth()){
+            x = getWidth() - width;
         }
 
         drawText(canvas, text, x, y, paintText, alignment);
