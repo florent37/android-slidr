@@ -4,6 +4,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
@@ -23,15 +24,29 @@ public class MainActivity extends AppCompatActivity {
                 slidr.setListener(new Slidr.Listener() {
                     @Override
                     public void valueChanged(Slidr slidr, float currentValue) {
-                        Log.d("slidr", "" + currentValue);
+
                     }
 
                     @Override
                     public void bubbleClicked(Slidr slidr) {
-                        Toast.makeText(getBaseContext(), "click", Toast.LENGTH_SHORT).show();
+
                     }
                 });
             }
+
+            findViewById(R.id.max).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    slidr.setMax(1000);
+                }
+            });
+
+            findViewById(R.id.current).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    slidr.setCurrentValue(100);
+                }
+            });
 
         }
 
@@ -54,14 +69,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
                 slidr.addStep(new Slidr.Step("test", 1500, Color.parseColor("#007E90"), Color.parseColor("#111111")));
-            }
-        }
-
-        {
-            final Slidr slidr = (Slidr) findViewById(R.id.slideure3);
-            if (slidr != null) {
-                slidr.setMax(2000);
-                slidr.addStep(new Slidr.Step("test", 1500, Color.parseColor("#007E90")));
             }
         }
     }

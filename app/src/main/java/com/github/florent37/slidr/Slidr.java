@@ -111,6 +111,8 @@ public class Slidr extends View {
 
     public void setMax(int max) {
         this.max = max;
+        updateValues();
+        update();
     }
 
     public float getCurrentValue() {
@@ -119,6 +121,7 @@ public class Slidr extends View {
 
     public void setCurrentValue(float value) {
         this.currentValue = value;
+        updateValues();
         update();
     }
 
