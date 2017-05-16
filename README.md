@@ -23,7 +23,7 @@ dependencies {
 
 # Step
 
-[![png](https://raw.githubusercontent.com/florent37/android-slidr/master/medias/slidr2.png)](https://github.com/florent37/android-slidr)
+[![png](https://raw.githubusercontent.com/florent37/android-slidr/master/medias/slidr2_1.png)](https://github.com/florent37/android-slidr)
 [![png](https://raw.githubusercontent.com/florent37/android-slidr/master/medias/slidr2_2.png)](https://github.com/florent37/android-slidr)
 
 ```xml
