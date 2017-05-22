@@ -7,6 +7,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.github.florent37.androidslidr.Slidr;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override

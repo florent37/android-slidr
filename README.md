@@ -14,7 +14,7 @@ dependencies {
 [![png](https://raw.githubusercontent.com/florent37/android-slidr/master/medias/slidr1.png)](https://github.com/florent37/android-slidr)
 
 ```xml
-<com.github.florent37.slidr.Slidr
+<com.github.florent37.androidslidr.Slidr
         android:layout_width="250dp"
         android:layout_height="wrap_content"
         app:slidr_regions_centerText="false"
@@ -27,7 +27,7 @@ dependencies {
 [![png](https://raw.githubusercontent.com/florent37/android-slidr/master/medias/slidr2_2.png)](https://github.com/florent37/android-slidr)
 
 ```xml
-<com.github.florent37.slidr.Slidr
+<com.github.florent37.androidslidr.Slidr
        android:id="@+id/slidr"
        android:layout_width="250dp"
        android:layout_height="wrap_content"
@@ -59,7 +59,7 @@ slidr.setListener(new Slidr.Listener() {
 [![png](https://raw.githubusercontent.com/florent37/android-slidr/master/medias/slidr_region.png)](https://github.com/florent37/android-slidr)
 
 ```xml
-<com.github.florent37.slidr.Slidr
+<com.github.florent37.androidslidr.Slidr
        android:id="@+id/slideure_regions"
        android:layout_margin="20dp"
        android:layout_width="250dp"

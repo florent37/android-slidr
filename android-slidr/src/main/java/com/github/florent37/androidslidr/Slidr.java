@@ -1,4 +1,4 @@
-package com.github.florent37.slidr;
+package com.github.florent37.androidslidr;
 
 import android.content.Context;
 import android.content.res.TypedArray;
