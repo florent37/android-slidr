@@ -55,7 +55,7 @@ public class Slidr extends View {
     private Listener listener;
     private GestureDetectorCompat detector;
     private Settings settings;
-    private int max = 1000;
+    private float max = 1000;
     private float currentValue = 0;
     private float oldValue = Float.MIN_VALUE;
     private List<Step> steps = new ArrayList<>();
@@ -253,11 +253,11 @@ public class Slidr extends View {
         return size / getResources().getDisplayMetrics().density;
     }
 
-    public int getMax() {
+    public float getMax() {
         return max;
     }
 
-    public void setMax(int max) {
+    public void setMax(float max) {
         this.max = max;
         updateValues();
         update();
