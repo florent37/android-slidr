@@ -22,6 +22,7 @@
         <attr name="slidr_region_rightColor" format="color" />
 
         <attr name="slidr_indicator_inside" format="boolean" />
+        <attr name="slidr_edditable" format="boolean" />
     </declare-styleable>
 
 </resources>

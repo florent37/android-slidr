@@ -1,27 +1,43 @@
 package com.github.florent37.androidslidr;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Rect;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
+import android.text.Editable;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.GestureDetector;
+import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import static android.view.MotionEvent.ACTION_UP;
 
 /**
  * Created by florentchampigny on 20/04/2017.
@@ -31,7 +47,7 @@ public class Slidr extends View {
 
     private static final float DISTANCE_TEXT_BAR = 20;
     private static final float BUBBLE_PADDING_HORIZONTAL = 35;
-    private static final float BUBBLE_PADDING_VERTICAL = 15;
+    private static final float BUBBLE_PADDING_VERTICAL = 20;
 
     private static final float BUBBLE_ARROW_HEIGHT = 20;
     private static final float BUBBLE_ARROW_WIDTH = 40;
@@ -54,6 +70,9 @@ public class Slidr extends View {
 
     private String textMax = "";
     private int calculatedHieght = 0;
+    private boolean isEditing = false;
+    private String textEditing = "";
+    private EditText editText;
 
     public Slidr(Context context) {
         this(context, null);
@@ -70,7 +89,132 @@ public class Slidr extends View {
     }
 
     private void onClick(MotionEvent e) {
-        if (bubble.clicked(e) && listener != null) {
+        if (bubble.clicked(e)) {
+            onBubbleClicked();
+        }
+    }
+
+    private ViewGroup getPhoneView() {
+        ViewParent activityView = getParent();
+        while (activityView.getParent() != null && activityView.getParent() instanceof ViewGroup) {
+            activityView = activityView.getParent();
+        }
+        return ((ViewGroup) activityView);
+    }
+
+    private void closeEditText() {
+        editText.clearFocus();
+        final ViewGroup parent = (ViewGroup) editText.getParent();
+        parent.removeView(editText);
+
+        getPhoneView().removeView(parent);
+
+        isEditing = false;
+        Float value = Float.valueOf(textEditing);
+        value = Math.min(value, max);
+        value = Math.max(value, 0);
+        setCurrentValue(value);
+        editText = null;
+        postInvalidate();
+    }
+
+    private void editBubbleEditPosition() {
+        if (isEditing) {
+            final Rect rectf = new Rect();
+            getGlobalVisibleRect(rectf);
+
+            editText.setX(Math.min(rectf.left + bubble.getX(), rectf.right - editText.getWidth()));
+            editText.setY(rectf.top + bubble.getY());
+
+            final ViewGroup.LayoutParams params = editText.getLayoutParams();
+            params.width = (int) bubble.width;
+            params.height = (int) bubble.getHeight();
+            editText.setLayoutParams(params);
+        }
+    }
+
+    private void onBubbleClicked() {
+        if (settings.editOnBubbleClick) {
+            isEditing = true;
+            final ViewGroup phoneView = getPhoneView();
+            editText = new EditText(getContext());
+            editText.setFocusableInTouchMode(true);
+
+            editText.setSingleLine(true);
+            editText.setGravity(Gravity.CENTER);
+            editText.setRawInputType(Configuration.KEYBOARD_12KEY);
+
+            editText.setTextColor(settings.paintIndicator.getColor());
+            editText.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            editText.setPadding(0, 0, 0, 0);
+            editText.setTextSize(TypedValue.COMPLEX_UNIT_PX, dpToPx(settings.textSizeBubbleCurrent));
+
+            textEditing = String.valueOf((int) currentValue);
+            editText.setText(textEditing);
+
+            final Rect rectf = new Rect();
+            getGlobalVisibleRect(rectf);
+
+            editText.setX(rectf.left + bubble.getX());
+            editText.setY(rectf.top + bubble.getY());
+
+            final ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            params.width = (int) bubble.width;
+            params.height = (int) bubble.getHeight();
+            editText.setLayoutParams(params);
+
+            final ViewGroup background = new TouchView(getContext(), rectf, new TouchView.Callback() {
+                @Override
+                public void onClicked() {
+                    closeEditText();
+                }
+            });
+
+            background.addView(editText);
+            phoneView.addView(background, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+
+            final Handler handler = new Handler();
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    editText.requestFocus();
+                    final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+                }
+            });
+
+            editText.setOnKeyListener(new View.OnKeyListener() {
+                public boolean onKey(View v, int keyCode, KeyEvent event) {
+                    if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                        closeEditText();
+                        return true;
+                    }
+                    return false;
+                }
+            });
+
+            editText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    textEditing = editText.getText().toString();
+                    updateBubbleWidth();
+                    invalidate();
+                    editBubbleEditPosition();
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                }
+            });
+
+            postInvalidate();
+        }
+        if (listener != null) {
             listener.bubbleClicked(this);
         }
     }
@@ -103,6 +247,10 @@ public class Slidr extends View {
 
     private float dpToPx(int size) {
         return size * getResources().getDisplayMetrics().density;
+    }
+
+    private float pxToDp(int size) {
+        return size / getResources().getDisplayMetrics().density;
     }
 
     public int getMax() {
@@ -150,12 +298,15 @@ public class Slidr extends View {
     }
 
     boolean handleTouch(MotionEvent event) {
+        if(isEditing) {
+            return false;
+        }
         boolean handledByDetector = this.detector.onTouchEvent(event);
         if (!handledByDetector) {
 
             final int action = MotionEventCompat.getActionMasked(event);
             switch (action) {
-                case MotionEvent.ACTION_UP:
+                case ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
                     actionUp();
                     moving = false;
@@ -205,6 +356,7 @@ public class Slidr extends View {
             }
 
             updateBubbleWidth();
+            editBubbleEditPosition();
         }
         postInvalidate();
     }
@@ -224,6 +376,7 @@ public class Slidr extends View {
 
     private void updateBubbleWidth() {
         this.bubble.width = calculateBubbleTextWidth() + BUBBLE_PADDING_HORIZONTAL * 2f;
+        this.bubble.width = Math.max(150, this.bubble.width);
     }
 
     private boolean isRegions() {
@@ -266,7 +419,7 @@ public class Slidr extends View {
                 this.barY += topTextHeight;
             }
         } else {
-            if(settings.drawBubble) {
+            if (settings.drawBubble) {
                 this.barY -= BUBBLE_ARROW_HEIGHT / 1.5f;
             }
         }
@@ -569,7 +722,7 @@ public class Slidr extends View {
                 if (aligment == Layout.Alignment.ALIGN_CENTER) {
                     lineX -= lineWidth / 2f;
                 }
-                if(lineX < 0){
+                if (lineX < 0) {
                     lineX = 0;
                 }
 
@@ -603,11 +756,11 @@ public class Slidr extends View {
             x = (x - width / 2f);
         }
 
-        if(x < 0){
+        if (x < 0) {
             x = 0;
         }
 
-        if(x + width > getWidth()){
+        if (x + width > getWidth()) {
             x = getWidth() - width;
         }
 
@@ -635,8 +788,38 @@ public class Slidr extends View {
     }
 
     private float calculateBubbleTextWidth() {
-        final String bubbleText = formatValue(getCurrentValue());
+        String bubbleText = formatValue(getCurrentValue());
+        if (isEditing) {
+            bubbleText = textEditing;
+        }
         return settings.paintBubbleTextCurrent.measureText(bubbleText);
+    }
+
+    private void drawBubblePath(Canvas canvas, float triangleCenterX, float height, float width) {
+        final Path path = new Path();
+
+        int padding = 3;
+        final Rect rect = new Rect(padding, padding, (int) width - padding, (int) (height - BUBBLE_ARROW_HEIGHT) - padding);
+
+        final float roundRectHeight = (height - BUBBLE_ARROW_HEIGHT) / 2;
+
+        path.moveTo(rect.left + roundRectHeight, rect.top);
+        path.lineTo(rect.right - roundRectHeight, rect.top);
+        path.quadTo(rect.right, rect.top, rect.right, rect.top + roundRectHeight);
+        path.lineTo(rect.right, rect.bottom - roundRectHeight);
+        path.quadTo(rect.right, rect.bottom, rect.right - roundRectHeight, rect.bottom);
+
+        path.lineTo(triangleCenterX + BUBBLE_ARROW_WIDTH / 2f, height - BUBBLE_ARROW_HEIGHT - padding);
+        path.lineTo(triangleCenterX, height - padding);
+        path.lineTo(triangleCenterX - BUBBLE_ARROW_WIDTH / 2f, height - BUBBLE_ARROW_HEIGHT - padding);
+
+        path.lineTo(rect.left + roundRectHeight, rect.bottom);
+        path.quadTo(rect.left, rect.bottom, rect.left, rect.bottom - roundRectHeight);
+        path.lineTo(rect.left, rect.top + roundRectHeight);
+        path.quadTo(rect.left, rect.top, rect.left + roundRectHeight, rect.top);
+        path.close();
+
+        canvas.drawPath(path, settings.paintBubble);
     }
 
     private void drawBubble(Canvas canvas, float centerX, float triangleCenterX, float y) {
@@ -647,32 +830,28 @@ public class Slidr extends View {
         {
             canvas.translate(centerX - width / 2f, y);
             triangleCenterX -= (centerX - width / 2f);
-            {
 
-                canvas.save();
-                {
-                    final Path arrowPath = new Path();
-                    arrowPath.moveTo(triangleCenterX - BUBBLE_ARROW_WIDTH / 2f, height - BUBBLE_ARROW_HEIGHT);
-                    arrowPath.lineTo(triangleCenterX + BUBBLE_ARROW_WIDTH / 2f, height - BUBBLE_ARROW_HEIGHT);
-                    arrowPath.lineTo(triangleCenterX, height);
-                    arrowPath.close();
+            if (!isEditing) {
+                drawBubblePath(canvas, triangleCenterX, height, width);
+            } else {
+                final int savedColor = settings.paintBubble.getColor();
 
-                    canvas.drawPath(arrowPath, settings.paintBubble);
-                }
-                canvas.restore();
-                canvas.save();
-                {
-                    final float roundRectHeight = height - BUBBLE_ARROW_HEIGHT;
-                    final float radius = roundRectHeight / 2f;
-                    canvas.drawCircle(radius, radius, radius, settings.paintBubble);
-                    canvas.drawCircle(width - radius, radius, radius, settings.paintBubble);
-                    canvas.drawRect(0 + radius, 0, width - radius, roundRectHeight, settings.paintBubble);
-                }
-                canvas.restore();
+                settings.paintBubble.setColor(settings.bubbleColorEditing);
+                settings.paintBubble.setStyle(Paint.Style.FILL);
+                drawBubblePath(canvas, triangleCenterX, height, width);
+
+                settings.paintBubble.setStyle(Paint.Style.STROKE);
+                settings.paintBubble.setColor(settings.paintIndicator.getColor());
+                drawBubblePath(canvas, triangleCenterX, height, width);
+
+                settings.paintBubble.setStyle(Paint.Style.FILL);
+                settings.paintBubble.setColor(savedColor);
             }
 
-            final String bubbleText = formatValue(getCurrentValue());
-            drawText(canvas, bubbleText, BUBBLE_PADDING_HORIZONTAL, BUBBLE_PADDING_VERTICAL - 3, settings.paintBubbleTextCurrent, Layout.Alignment.ALIGN_NORMAL);
+            if (!isEditing) {
+                final String bubbleText = formatValue(getCurrentValue());
+                drawText(canvas, bubbleText, BUBBLE_PADDING_HORIZONTAL, BUBBLE_PADDING_VERTICAL - 3, settings.paintBubbleTextCurrent, Layout.Alignment.ALIGN_NORMAL);
+            }
         }
 
         canvas.restore();
@@ -730,7 +909,6 @@ public class Slidr extends View {
 
     public static class Settings {
         private Slidr slidr;
-
         private Paint paintBar;
         private Paint paintIndicator;
         private Paint paintStep;
@@ -746,11 +924,9 @@ public class Slidr extends View {
         private int textSizeBubbleCurrent = 16;
         private float barHeight = 35;
         private float paddingCorners;
-
         private boolean step_colorizeAfterLast = false;
         private boolean step_drawLines = true;
         private boolean step_colorizeOnlyBeforeIndicator = true;
-
         private boolean drawTextOnTop = true;
         private boolean drawTextOnBottom = true;
         private boolean drawBubble = true;
@@ -758,9 +934,10 @@ public class Slidr extends View {
         private boolean indicatorInside = false;
         private boolean regions_textFollowRegionColor = false;
         private boolean regions_centerText = true;
-
         private int regionColorLeft = Color.parseColor("#007E90");
         private int regionColorRight = Color.parseColor("#ed5564");
+        private boolean editOnBubbleClick = true;
+        private int bubbleColorEditing = Color.WHITE;
 
         public Settings(Slidr slidr) {
             this.slidr = slidr;
@@ -795,11 +972,12 @@ public class Slidr extends View {
             paintBubbleTextCurrent.setAntiAlias(true);
             paintBubbleTextCurrent.setStyle(Paint.Style.FILL);
             paintBubbleTextCurrent.setColor(Color.WHITE);
+            paintBubbleTextCurrent.setStrokeWidth(2);
             paintBubbleTextCurrent.setTextSize(dpToPx(textSizeBubbleCurrent));
 
             paintBubble = new Paint();
             paintBubble.setAntiAlias(true);
-            paintBubble.setStrokeWidth(2);
+            paintBubble.setStrokeWidth(3);
         }
 
         private void init(Context context, AttributeSet attrs) {
@@ -826,6 +1004,8 @@ public class Slidr extends View {
                 this.indicatorInside = a.getBoolean(R.styleable.Slidr_slidr_indicator_inside, indicatorInside);
                 this.regions_textFollowRegionColor = a.getBoolean(R.styleable.Slidr_slidr_regions_textFollowRegionColor, regions_textFollowRegionColor);
                 this.regions_centerText = a.getBoolean(R.styleable.Slidr_slidr_regions_centerText, regions_centerText);
+
+                this.editOnBubbleClick = a.getBoolean(R.styleable.Slidr_slidr_edditable, editOnBubbleClick);
 
                 a.recycle();
             }
@@ -889,6 +1069,40 @@ public class Slidr extends View {
 
     }
 
+    private static class TouchView extends FrameLayout {
+
+        private final Rect viewRect;
+        private final Callback callback;
+        public TouchView(Context context, Rect viewRect, Callback callback) {
+            super(context);
+            this.viewRect = viewRect;
+            this.setBackgroundColor(Color.TRANSPARENT);
+            this.callback = callback;
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent event) {
+            float x = event.getX();
+            float y = event.getY();
+
+            if (x >= viewRect.left
+                    && x <= viewRect.right
+                    && y >= viewRect.top
+                    && y <= viewRect.bottom) {
+                return false;
+                //return compteurChampEditable.onTouchEvent(event);
+            } else if (event.getAction() == ACTION_UP) {
+                ((ViewGroup) getParent()).removeView(this);
+                callback.onClicked();
+            }
+            return true;
+        }
+
+        public interface Callback {
+            void onClicked();
+        }
+    }
+
     private class Bubble {
         private float height;
         private float width;
@@ -898,6 +1112,18 @@ public class Slidr extends View {
         public boolean clicked(MotionEvent e) {
             return e.getX() >= x && e.getX() <= x + width
                     && e.getY() >= y && e.getY() < y + height;
+        }
+
+        public float getHeight() {
+            return height - BUBBLE_ARROW_HEIGHT;
+        }
+
+        public float getX() {
+            return Math.max(x, 0);
+        }
+
+        public float getY() {
+            return Math.max(y, 0);
         }
     }
 
