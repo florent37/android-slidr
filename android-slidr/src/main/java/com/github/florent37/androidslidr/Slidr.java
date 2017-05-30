@@ -1,5 +1,6 @@
 package com.github.florent37.androidslidr;
 
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -17,6 +18,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.text.Editable;
+import android.text.InputType;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -31,6 +33,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
@@ -49,7 +52,7 @@ import static android.view.MotionEvent.ACTION_UP;
  * Created by florentchampigny on 20/04/2017.
  */
 
-public class Slidr extends View {
+public class Slidr extends FrameLayout {
 
     private static final float DISTANCE_TEXT_BAR = 20;
     private static final float BUBBLE_PADDING_HORIZONTAL = 35;
@@ -62,6 +65,7 @@ public class Slidr extends View {
     private GestureDetectorCompat detector;
     private Settings settings;
     private float max = 1000;
+    private float min = 0;
     private float currentValue = 0;
     private float oldValue = Float.MIN_VALUE;
     private List<Step> steps = new ArrayList<>();
@@ -101,39 +105,45 @@ public class Slidr extends View {
         }
     }
 
-    private ViewGroup getPhoneView() {
-        ViewParent activityView = getParent();
-        while (activityView.getParent() != null && activityView.getParent() instanceof ViewGroup) {
-            activityView = activityView.getParent();
-        }
-        return ((ViewGroup) activityView);
-    }
+
 
     private void closeEditText() {
         editText.clearFocus();
 
-        final WindowManager wm = (WindowManager) getContext().getSystemService(WINDOW_SERVICE);
-        wm.removeView(((View) editText.getParent()));
+        removeView(editText);
 
         isEditing = false;
         if(TextUtils.isEmpty(textEditing)){
             textEditing = "0";
         }
-        Float value = Float.valueOf(textEditing);
+        Float value;
+        try {
+            value = Float.valueOf(textEditing);
+        } catch (Exception e){
+            e.printStackTrace();
+            value = min;
+        }
+
+
         value = Math.min(value, max);
-        value = Math.max(value, 0);
-        setCurrentValue(value);
+        value = Math.max(value, min);
+        final ValueAnimator valueAnimator = ValueAnimator.ofFloat(currentValue, value);
+        valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                setCurrentValue(((float) animation.getAnimatedValue()));
+                postInvalidate();
+            }
+        });
+        valueAnimator.start();
         editText = null;
         postInvalidate();
     }
 
     private void editBubbleEditPosition() {
         if (isEditing) {
-            final Rect rectf = new Rect();
-            getGlobalVisibleRect(rectf);
-
-            editText.setX(Math.min(rectf.left + bubble.getX(), rectf.right - editText.getWidth()));
-            editText.setY(rectf.top + bubble.getY() - statusBarHeight() + 26);
+            editText.setX(Math.min(bubble.getX(), getWidth() - editText.getWidth()));
+            editText.setY(bubble.getY());
 
             final ViewGroup.LayoutParams params = editText.getLayoutParams();
             params.width = (int) bubble.width;
@@ -142,15 +152,6 @@ public class Slidr extends View {
 
             editText.animate().alpha(1f);
         }
-    }
-
-    private float statusBarHeight(){
-        Rect rectangle = new Rect();
-        Window window = ((Activity) getContext()).getWindow();
-        window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
-        int statusBarHeight = rectangle.top;
-        int contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT).getTop();
-        return contentViewTop - statusBarHeight;
     }
 
     private void onBubbleClicked() {
@@ -162,7 +163,8 @@ public class Slidr extends View {
 
             editText.setSingleLine(true);
             editText.setGravity(Gravity.CENTER);
-            editText.setRawInputType(Configuration.KEYBOARD_12KEY);
+            //editText.setRawInputType(Configuration.KEYBOARD_12KEY);
+            editText.setInputType(InputType.TYPE_CLASS_NUMBER);
 
             editText.setTextColor(settings.paintIndicator.getColor());
             editText.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -172,57 +174,32 @@ public class Slidr extends View {
             textEditing = String.valueOf((int) currentValue);
             editText.setText(textEditing);
 
-            final Rect rectf = new Rect();
-            getGlobalVisibleRect(rectf);
-
-
-
             final ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             params.width = (int) bubble.width;
             params.height = (int) bubble.getHeight();
             editText.setLayoutParams(params);
 
-            TouchView touchView = new TouchView(getContext(), rectf, new TouchView.Callback() {
+            addView(editText);
+            editText.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
                 @Override
-                public void onClicked() {
-                    closeEditText();
+                public boolean onPreDraw() {
+                    editBubbleEditPosition();
+                    editText.getViewTreeObserver().removeOnPreDrawListener(this);
+                    return false;
                 }
             });
 
-            touchView.add(editText);
-
-            WindowManager.LayoutParams p = new WindowManager.LayoutParams(
-                    WindowManager.LayoutParams.TYPE_APPLICATION,
-                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
-                    PixelFormat.TRANSLUCENT);
-            p.gravity = Gravity.BOTTOM | Gravity.TOP;
-            p.setTitle("");
-            final WindowManager wm = (WindowManager) getContext().getSystemService(WINDOW_SERVICE);
-            wm.addView(touchView, p);
 
             editText.requestFocus();
             editText.requestFocusFromTouch();
-
-            editText.setAlpha(0);
-
-            editText.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    InputMethodManager imm = (InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
-
-                    editText.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            editBubbleEditPosition();
-                        }
-                    }, 100);
-                }
-            }, 100);
+            editBubbleEditPosition();
 
             editText.setOnKeyListener(new View.OnKeyListener() {
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
                     if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
+                        final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                        imm.hideSoftInputFromWindow(editText.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+
                         closeEditText();
                         return true;
                     }
@@ -257,6 +234,8 @@ public class Slidr extends View {
     }
 
     private void init(Context context, @Nullable AttributeSet attrs) {
+        setWillNotDraw(false);
+
         detector = new GestureDetectorCompat(context, new GestureDetector.SimpleOnGestureListener() {
             //some callbacks
 
@@ -296,6 +275,12 @@ public class Slidr extends View {
 
     public void setMax(float max) {
         this.max = max;
+        updateValues();
+        update();
+    }
+
+    public void setMin(float min) {
+        this.min = min;
         updateValues();
         update();
     }
@@ -385,7 +370,7 @@ public class Slidr extends View {
     public void update() {
         if (barWidth > 0f) {
             float currentPercent = indicatorX / barWidth;
-            currentValue = currentPercent * max;
+            currentValue = currentPercent * (max - min) + min;
 
             if (listener != null && oldValue != currentValue) {
                 oldValue = currentValue;
@@ -421,6 +406,10 @@ public class Slidr extends View {
     }
 
     private void updateValues() {
+
+        if(currentValue < min){
+            currentValue = min;
+        }
 
         settings.paddingCorners = settings.barHeight;
 
@@ -472,11 +461,11 @@ public class Slidr extends View {
         }
 
         for (Step step : steps) {
-            final float stoppoverPercent = step.value / max;
+            final float stoppoverPercent = step.value / (max - min);
             step.xStart = stoppoverPercent * barWidth;
         }
 
-        indicatorX = currentValue / max * barWidth;
+        indicatorX = (currentValue - min) / (max - min) * barWidth;
 
         calculatedHieght = (int) (barCenterY + indicatorRadius);
 
@@ -503,7 +492,7 @@ public class Slidr extends View {
     private Step findStepBeforeCustor() {
         for (int i = steps.size() - 1; i >= 0; i--) {
             final Step step = steps.get(i);
-            if (currentValue >= step.value) {
+            if ((currentValue - min) >= step.value) {
                 return step;
             }
             break;
@@ -514,7 +503,7 @@ public class Slidr extends View {
     private Step findStepOfCustor() {
         for (int i = 0; i < steps.size(); ++i) {
             final Step step = steps.get(i);
-            if (currentValue <= step.value) {
+            if ((currentValue - min) <= step.value) {
                 return step;
             }
             break;
@@ -622,7 +611,7 @@ public class Slidr extends View {
                         //find the step just below currentValue
                         for (int i = steps.size() - 1; i >= 0; i--) {
                             final Step step = steps.get(i);
-                            if (currentValue > step.value) {
+                            if ((currentValue - min) > step.value) {
                                 settings.paintBar.setColor(step.colorAfter);
                                 canvas.drawRect(step.xStart + paddingLeft, barY, indicatorCenterX, barY + settings.barHeight, settings.paintBar);
                                 break;
@@ -644,7 +633,7 @@ public class Slidr extends View {
                             leftValue = currentValue;
                             rightValue = max - leftValue;
                         } else {
-                            leftValue = 0;
+                            leftValue = min;
                             rightValue = max;
                         }
 
@@ -672,7 +661,7 @@ public class Slidr extends View {
                         }
                         drawIndicatorsTextAbove(canvas, formatRegionValue(1, rightValue), settings.paintTextTop, textX, textY, Layout.Alignment.ALIGN_CENTER);
                     } else {
-                        drawIndicatorsTextAbove(canvas, formatValue(0), settings.paintTextTop, 0 + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
+                        drawIndicatorsTextAbove(canvas, formatValue(min), settings.paintTextTop, 0 + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
                         for (Step step : steps) {
                             drawIndicatorsTextAbove(canvas, formatValue(step.value), settings.paintTextTop, step.xStart + paddingLeft, textY, Layout.Alignment.ALIGN_CENTER);
                         }

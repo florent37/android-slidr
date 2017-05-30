@@ -18,6 +18,7 @@ public class EditActivity extends AppCompatActivity {
         setContentView(R.layout.activity_edit);
 
         final Slidr slidr = (Slidr) findViewById(R.id.slideure);
+        slidr.setMin(200);
         slidr.setListener(new Slidr.Listener() {
             @Override
             public void valueChanged(Slidr slidr, float currentValue) {

@@ -13,7 +13,7 @@
         android:layout_margin="20dp"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
+        android:layout_gravity="top|center_horizontal"
         app:slidr_regions_centerText="false"
         app:slidr_region_leftColor="@color/colorLeft" />
 
