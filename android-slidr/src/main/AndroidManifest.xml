@@ -1,1 +1,4 @@
-<manifest package="com.github.florent37.androidslidr"/>
+<manifest package="com.github.florent37.androidslidr"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+</manifest>

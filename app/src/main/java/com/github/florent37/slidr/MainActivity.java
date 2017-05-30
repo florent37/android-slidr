@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
                 slidr.setMax(500);
                 slidr.addStep(new Slidr.Step("test", 250, Color.parseColor("#007E90"), Color.RED));
                 slidr.setTextMax("max\nvalue");
+                slidr.setTextMin("min\nvalue");
                 slidr.setCurrentValue(300);
                 slidr.setListener(new Slidr.Listener() {
                     @Override

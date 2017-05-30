@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Handler;
@@ -29,14 +30,17 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ScrollView;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static android.content.Context.WINDOW_SERVICE;
 import static android.view.MotionEvent.ACTION_UP;
 
 /**
@@ -69,6 +73,7 @@ public class Slidr extends View {
     private RegionTextFormatter regionTextFormatter = null;
 
     private String textMax = "";
+    private String textMin = "";
     private int calculatedHieght = 0;
     private boolean isEditing = false;
     private String textEditing = "";
@@ -104,10 +109,9 @@ public class Slidr extends View {
 
     private void closeEditText() {
         editText.clearFocus();
-        final ViewGroup parent = (ViewGroup) editText.getParent();
-        parent.removeView(editText);
 
-        getPhoneView().removeView(parent);
+        final WindowManager wm = (WindowManager) getContext().getSystemService(WINDOW_SERVICE);
+        wm.removeView(editText);
 
         isEditing = false;
         Float value = Float.valueOf(textEditing);
@@ -136,8 +140,8 @@ public class Slidr extends View {
     private void onBubbleClicked() {
         if (settings.editOnBubbleClick) {
             isEditing = true;
-            final ViewGroup phoneView = getPhoneView();
             editText = new EditText(getContext());
+            editText.setFocusable(true);
             editText.setFocusableInTouchMode(true);
 
             editText.setSingleLine(true);
@@ -152,34 +156,51 @@ public class Slidr extends View {
             textEditing = String.valueOf((int) currentValue);
             editText.setText(textEditing);
 
+            editText.setBackgroundColor(Color.BLACK);
+
             final Rect rectf = new Rect();
             getGlobalVisibleRect(rectf);
 
-            editText.setX(rectf.left + bubble.getX());
-            editText.setY(rectf.top + bubble.getY());
+
 
             final ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             params.width = (int) bubble.width;
             params.height = (int) bubble.getHeight();
             editText.setLayoutParams(params);
 
-            final ViewGroup background = new TouchView(getContext(), rectf, new TouchView.Callback() {
+            TouchView touchView = new TouchView(getContext(), rectf, new TouchView.Callback() {
                 @Override
                 public void onClicked() {
-                    closeEditText();
+
                 }
             });
+            //editText.setX(rectf.left + bubble.getX());
+            //editText.setY(rectf.top + bubble.getY());
 
-            background.addView(editText);
-            phoneView.addView(background, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            touchView.add(editText);
 
-            final Handler handler = new Handler();
-            handler.post(new Runnable() {
+            WindowManager.LayoutParams p = new WindowManager.LayoutParams(
+                    WindowManager.LayoutParams.TYPE_APPLICATION,
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
+                    PixelFormat.TRANSLUCENT);
+            p.gravity = Gravity.BOTTOM | Gravity.TOP;
+            p.setTitle("");
+            final WindowManager wm = (WindowManager) getContext().getSystemService(WINDOW_SERVICE);
+            wm.addView(touchView, p);
+
+            editText.requestFocus();
+            editText.requestFocusFromTouch();
+
+            InputMethodManager imm = (InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.showSoftInput(editText, InputMethodManager.SHOW_FORCED);
+
+            editText.setOnFocusChangeListener(new OnFocusChangeListener() {
                 @Override
-                public void run() {
-                    editText.requestFocus();
-                    final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+                public void onFocusChange(View v, boolean hasFocus) {
+                    final Rect rectf = new Rect();
+                    getGlobalVisibleRect(rectf);
+                    editText.setX(rectf.left + bubble.getX());
+                    editText.setY(rectf.top + bubble.getY());
                 }
             });
 
@@ -445,7 +466,10 @@ public class Slidr extends View {
 
         float bottomTextHeight = 0;
         if (!TextUtils.isEmpty(textMax)) {
-            bottomTextHeight = calculateTextMultilineHeight(textMax, settings.paintTextBottom);
+            bottomTextHeight = Math.max(
+                    calculateTextMultilineHeight(textMax, settings.paintTextBottom),
+                    calculateTextMultilineHeight(textMin, settings.paintTextBottom)
+            );
         }
         for (Step step : steps) {
             bottomTextHeight = Math.max(
@@ -484,6 +508,12 @@ public class Slidr extends View {
 
     public void setTextMax(String textMax) {
         this.textMax = textMax;
+        postInvalidate();
+    }
+
+    public void setTextMin(String textMin) {
+        this.textMin = textMin;
+        postInvalidate();
     }
 
     @Override
@@ -650,8 +680,14 @@ public class Slidr extends View {
                     }
                 }
 
-                if (settings.drawTextOnBottom && !TextUtils.isEmpty(textMax)) {
-                    drawMultilineText(canvas, textMax, canvas.getWidth(), bottomTextY, settings.paintTextBottom, Layout.Alignment.ALIGN_CENTER);
+                if (settings.drawTextOnBottom) {
+                    if (!TextUtils.isEmpty(textMax)) {
+                        drawMultilineText(canvas, textMax, canvas.getWidth(), bottomTextY, settings.paintTextBottom, Layout.Alignment.ALIGN_CENTER);
+                    }
+
+                    if (!TextUtils.isEmpty(textMin)) {
+                        drawMultilineText(canvas, textMin, 0, bottomTextY, settings.paintTextBottom, Layout.Alignment.ALIGN_CENTER);
+                    }
                 }
             }
 
@@ -936,7 +972,7 @@ public class Slidr extends View {
         private boolean regions_centerText = true;
         private int regionColorLeft = Color.parseColor("#007E90");
         private int regionColorRight = Color.parseColor("#ed5564");
-        private boolean editOnBubbleClick = true;
+        private boolean editOnBubbleClick = false;
         private int bubbleColorEditing = Color.WHITE;
 
         public Settings(Slidr slidr) {
@@ -1073,11 +1109,18 @@ public class Slidr extends View {
 
         private final Rect viewRect;
         private final Callback callback;
+
         public TouchView(Context context, Rect viewRect, Callback callback) {
             super(context);
             this.viewRect = viewRect;
             this.setBackgroundColor(Color.TRANSPARENT);
             this.callback = callback;
+
+            setBackgroundColor(Color.parseColor("#EEAAAAAA"));
+        }
+
+        public void add(View view){
+            addView(view);
         }
 
         @Override
@@ -1092,7 +1135,7 @@ public class Slidr extends View {
                 return false;
                 //return compteurChampEditable.onTouchEvent(event);
             } else if (event.getAction() == ACTION_UP) {
-                ((ViewGroup) getParent()).removeView(this);
+                //((ViewGroup) getParent()).removeView(this);
                 callback.onClicked();
             }
             return true;
