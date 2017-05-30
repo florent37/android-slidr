@@ -36,6 +36,7 @@ import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -135,6 +136,7 @@ public class Slidr extends FrameLayout {
                 postInvalidate();
             }
         });
+        valueAnimator.setInterpolator(new AccelerateInterpolator());
         valueAnimator.start();
         editText = null;
         postInvalidate();
