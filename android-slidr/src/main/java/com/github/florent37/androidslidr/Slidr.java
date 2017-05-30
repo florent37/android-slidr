@@ -129,7 +129,6 @@ public class Slidr extends FrameLayout {
         valueAnimator.setInterpolator(new AccelerateInterpolator());
         valueAnimator.start();
         editText = null;
-        editListener = null;
         postInvalidate();
     }
 
