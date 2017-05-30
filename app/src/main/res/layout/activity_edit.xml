@@ -8,13 +8,32 @@
     android:padding="15dp"
     tools:context="com.github.florent37.slidr.MainActivity">
 
-    <com.github.florent37.androidslidr.Slidr
-        android:id="@+id/slideure"
-        android:layout_margin="20dp"
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="top|center_horizontal"
-        app:slidr_regions_centerText="false"
-        app:slidr_region_leftColor="@color/colorLeft" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <View
+                android:id="@+id/tmp"
+                android:layout_width="match_parent"
+                android:layout_height="400dp" />
+
+            <com.github.florent37.androidslidr.Slidr
+                android:id="@+id/slideure"
+                android:layout_width="250dp"
+                android:layout_below="@+id/tmp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_margin="20dp"
+                app:slidr_region_leftColor="@color/colorLeft"
+                app:slidr_regions_centerText="false" />
+
+        </RelativeLayout>
+
+    </ScrollView>
 
 </FrameLayout>

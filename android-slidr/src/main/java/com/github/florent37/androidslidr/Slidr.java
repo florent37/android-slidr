@@ -1,18 +1,14 @@
 package com.github.florent37.androidslidr;
 
 import android.animation.ValueAnimator;
-import android.app.Activity;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
-import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.GestureDetectorCompat;
@@ -32,21 +28,16 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewParent;
 import android.view.ViewTreeObserver;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.ScrollView;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static android.content.Context.WINDOW_SERVICE;
 import static android.view.MotionEvent.ACTION_UP;
 
 /**
@@ -85,6 +76,7 @@ public class Slidr extends FrameLayout {
     private boolean isEditing = false;
     private String textEditing = "";
     private EditText editText;
+    private EditListener editListener;
 
     public Slidr(Context context) {
         this(context, null);
@@ -106,21 +98,19 @@ public class Slidr extends FrameLayout {
         }
     }
 
-
-
     private void closeEditText() {
         editText.clearFocus();
 
         removeView(editText);
 
         isEditing = false;
-        if(TextUtils.isEmpty(textEditing)){
+        if (TextUtils.isEmpty(textEditing)) {
             textEditing = "0";
         }
         Float value;
         try {
             value = Float.valueOf(textEditing);
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             value = min;
         }
@@ -139,6 +129,7 @@ public class Slidr extends FrameLayout {
         valueAnimator.setInterpolator(new AccelerateInterpolator());
         valueAnimator.start();
         editText = null;
+        editListener = null;
         postInvalidate();
     }
 
@@ -195,6 +186,10 @@ public class Slidr extends FrameLayout {
             editText.requestFocus();
             editText.requestFocusFromTouch();
             editBubbleEditPosition();
+
+            if (editListener != null) {
+                editListener.onEditStarted(editText);
+            }
 
             editText.setOnKeyListener(new View.OnKeyListener() {
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -257,11 +252,11 @@ public class Slidr extends FrameLayout {
         this.settings.init(context, attrs);
     }
 
-    //region getters
-
     public void setListener(Listener listener) {
         this.listener = listener;
     }
+
+    //region getters
 
     private float dpToPx(int size) {
         return size * getResources().getDisplayMetrics().density;
@@ -297,13 +292,17 @@ public class Slidr extends FrameLayout {
         update();
     }
 
-    //endregion
+    public void setEditListener(EditListener editListener) {
+        this.editListener = editListener;
+    }
 
     public void addStep(List<Step> steps) {
         this.steps.addAll(steps);
         Collections.sort(steps);
         update();
     }
+
+    //endregion
 
     public void addStep(Step step) {
         this.steps.add(step);
@@ -322,7 +321,7 @@ public class Slidr extends FrameLayout {
     }
 
     boolean handleTouch(MotionEvent event) {
-        if(isEditing) {
+        if (isEditing) {
             return false;
         }
         boolean handledByDetector = this.detector.onTouchEvent(event);
@@ -409,7 +408,7 @@ public class Slidr extends FrameLayout {
 
     private void updateValues() {
 
-        if(currentValue < min){
+        if (currentValue < min) {
             currentValue = min;
         }
 
@@ -810,6 +809,10 @@ public class Slidr extends FrameLayout {
         drawText(canvas, text, x, y, paintText, alignment);
     }
 
+    private float calculateTextMultilineHeight(String text, TextPaint textPaint) {
+        return text.split("\n").length * textPaint.getTextSize();
+    }
+
     /*
     private float calculateTextMultilineWidth(String text, TextPaint textPaint) {
         int maxLength = -1;
@@ -824,11 +827,6 @@ public class Slidr extends FrameLayout {
         return textPaint.measureText(max.toString());
     }
     */
-
-
-    private float calculateTextMultilineHeight(String text, TextPaint textPaint) {
-        return text.split("\n").length * textPaint.getTextSize();
-    }
 
     private float calculateBubbleTextWidth() {
         String bubbleText = formatValue(getCurrentValue());
@@ -909,6 +907,10 @@ public class Slidr extends FrameLayout {
     public void setRegionTextFormatter(RegionTextFormatter regionTextFormatter) {
         this.regionTextFormatter = regionTextFormatter;
         update();
+    }
+
+    public interface EditListener {
+        void onEditStarted(EditText editText);
     }
 
     public interface Listener {
@@ -1124,7 +1126,7 @@ public class Slidr extends FrameLayout {
             this.callback = callback;
         }
 
-        public void add(View view){
+        public void add(View view) {
             addView(view);
         }
 
