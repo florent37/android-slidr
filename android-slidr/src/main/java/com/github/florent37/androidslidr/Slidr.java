@@ -1,5 +1,6 @@
 package com.github.florent37.androidslidr;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
@@ -30,6 +31,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.Window;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -111,9 +113,12 @@ public class Slidr extends View {
         editText.clearFocus();
 
         final WindowManager wm = (WindowManager) getContext().getSystemService(WINDOW_SERVICE);
-        wm.removeView(editText);
+        wm.removeView(((View) editText.getParent()));
 
         isEditing = false;
+        if(TextUtils.isEmpty(textEditing)){
+            textEditing = "0";
+        }
         Float value = Float.valueOf(textEditing);
         value = Math.min(value, max);
         value = Math.max(value, 0);
@@ -128,13 +133,24 @@ public class Slidr extends View {
             getGlobalVisibleRect(rectf);
 
             editText.setX(Math.min(rectf.left + bubble.getX(), rectf.right - editText.getWidth()));
-            editText.setY(rectf.top + bubble.getY());
+            editText.setY(rectf.top + bubble.getY() - statusBarHeight() + 26);
 
             final ViewGroup.LayoutParams params = editText.getLayoutParams();
             params.width = (int) bubble.width;
             params.height = (int) bubble.getHeight();
             editText.setLayoutParams(params);
+
+            editText.animate().alpha(1f);
         }
+    }
+
+    private float statusBarHeight(){
+        Rect rectangle = new Rect();
+        Window window = ((Activity) getContext()).getWindow();
+        window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
+        int statusBarHeight = rectangle.top;
+        int contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT).getTop();
+        return contentViewTop - statusBarHeight;
     }
 
     private void onBubbleClicked() {
@@ -156,8 +172,6 @@ public class Slidr extends View {
             textEditing = String.valueOf((int) currentValue);
             editText.setText(textEditing);
 
-            editText.setBackgroundColor(Color.BLACK);
-
             final Rect rectf = new Rect();
             getGlobalVisibleRect(rectf);
 
@@ -171,11 +185,9 @@ public class Slidr extends View {
             TouchView touchView = new TouchView(getContext(), rectf, new TouchView.Callback() {
                 @Override
                 public void onClicked() {
-
+                    closeEditText();
                 }
             });
-            //editText.setX(rectf.left + bubble.getX());
-            //editText.setY(rectf.top + bubble.getY());
 
             touchView.add(editText);
 
@@ -191,18 +203,22 @@ public class Slidr extends View {
             editText.requestFocus();
             editText.requestFocusFromTouch();
 
-            InputMethodManager imm = (InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.showSoftInput(editText, InputMethodManager.SHOW_FORCED);
+            editText.setAlpha(0);
 
-            editText.setOnFocusChangeListener(new OnFocusChangeListener() {
+            editText.postDelayed(new Runnable() {
                 @Override
-                public void onFocusChange(View v, boolean hasFocus) {
-                    final Rect rectf = new Rect();
-                    getGlobalVisibleRect(rectf);
-                    editText.setX(rectf.left + bubble.getX());
-                    editText.setY(rectf.top + bubble.getY());
+                public void run() {
+                    InputMethodManager imm = (InputMethodManager)getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+
+                    editText.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            editBubbleEditPosition();
+                        }
+                    }, 100);
                 }
-            });
+            }, 100);
 
             editText.setOnKeyListener(new View.OnKeyListener() {
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -972,7 +988,7 @@ public class Slidr extends View {
         private boolean regions_centerText = true;
         private int regionColorLeft = Color.parseColor("#007E90");
         private int regionColorRight = Color.parseColor("#ed5564");
-        private boolean editOnBubbleClick = false;
+        private boolean editOnBubbleClick = true;
         private int bubbleColorEditing = Color.WHITE;
 
         public Settings(Slidr slidr) {
@@ -1115,8 +1131,6 @@ public class Slidr extends View {
             this.viewRect = viewRect;
             this.setBackgroundColor(Color.TRANSPARENT);
             this.callback = callback;
-
-            setBackgroundColor(Color.parseColor("#EEAAAAAA"));
         }
 
         public void add(View view){
