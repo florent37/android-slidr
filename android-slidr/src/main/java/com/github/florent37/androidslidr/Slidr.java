@@ -105,7 +105,7 @@ public class Slidr extends FrameLayout {
 
         isEditing = false;
         if (TextUtils.isEmpty(textEditing)) {
-            textEditing = "0";
+            textEditing = String.valueOf(currentValue);
         }
         Float value;
         try {
@@ -152,6 +152,7 @@ public class Slidr extends FrameLayout {
             editText = new EditText(getContext());
             editText.setFocusable(true);
             editText.setFocusableInTouchMode(true);
+            editText.setSelectAllOnFocus(true);
 
             editText.setSingleLine(true);
             editText.setGravity(Gravity.CENTER);
@@ -170,6 +171,14 @@ public class Slidr extends FrameLayout {
             params.width = (int) bubble.width;
             params.height = (int) bubble.getHeight();
             editText.setLayoutParams(params);
+
+            editText.post(new Runnable() {
+                @Override
+                public void run() {
+                    final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+                }
+            });
 
             addView(editText);
             editText.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
