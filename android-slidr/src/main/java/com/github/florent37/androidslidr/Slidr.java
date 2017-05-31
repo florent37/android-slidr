@@ -1,18 +1,21 @@
 package com.github.florent37.androidslidr;
 
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
+import android.support.v7.widget.AppCompatEditText;
 import android.text.Editable;
 import android.text.InputType;
 import android.text.Layout;
@@ -29,6 +32,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
+import android.view.Window;
+import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -38,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static android.content.Context.WINDOW_SERVICE;
 import static android.view.MotionEvent.ACTION_UP;
 
 /**
@@ -76,6 +82,7 @@ public class Slidr extends FrameLayout {
     private boolean isEditing = false;
     private String textEditing = "";
     private EditText editText;
+    private TouchView touchView;
     private EditListener editListener;
 
     public Slidr(Context context) {
@@ -101,6 +108,10 @@ public class Slidr extends FrameLayout {
     private void closeEditText() {
         editText.clearFocus();
 
+        final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(editText.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+
+        ((ViewGroup) touchView.getParent()).removeView(touchView);
         removeView(editText);
 
         isEditing = false;
@@ -129,8 +140,14 @@ public class Slidr extends FrameLayout {
         valueAnimator.setInterpolator(new AccelerateInterpolator());
         valueAnimator.start();
         editText = null;
+        touchView = null;
         postInvalidate();
     }
+
+    private ViewGroup getActivityDecorView() {
+        return  (ViewGroup) ((Activity) getContext()).getWindow().getDecorView();
+    }
+
 
     private void editBubbleEditPosition() {
         if (isEditing) {
@@ -149,7 +166,20 @@ public class Slidr extends FrameLayout {
     private void onBubbleClicked() {
         if (settings.editOnBubbleClick) {
             isEditing = true;
-            editText = new EditText(getContext());
+            editText = new AppCompatEditText(getContext()) {
+                @Override
+                public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+                    if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+                        dispatchKeyEvent(event);
+                        closeEditText();
+                        return false;
+                    }
+                    return super.onKeyPreIme(keyCode, event);
+                }
+
+            };
+
+
             editText.setFocusable(true);
             editText.setFocusableInTouchMode(true);
             editText.setSelectAllOnFocus(true);
@@ -172,13 +202,25 @@ public class Slidr extends FrameLayout {
             params.height = (int) bubble.getHeight();
             editText.setLayoutParams(params);
 
-            editText.post(new Runnable() {
+            final Rect rect = new Rect();
+            getGlobalVisibleRect(rect);
+            this.touchView = new TouchView(getContext(), rect);
+            getActivityDecorView().addView(touchView);
+
+            editText.postDelayed(new Runnable() {
                 @Override
                 public void run() {
                     final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                     imm.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT);
+
+                    touchView.setCallback(new TouchView.Callback() {
+                        @Override
+                        public void onClicked() {
+                            closeEditText();
+                        }
+                    });
                 }
-            });
+            }, 300);
 
             addView(editText);
             editText.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
@@ -202,9 +244,6 @@ public class Slidr extends FrameLayout {
             editText.setOnKeyListener(new View.OnKeyListener() {
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
                     if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
-                        final InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-                        imm.hideSoftInputFromWindow(editText.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-
                         closeEditText();
                         return true;
                     }
@@ -237,6 +276,17 @@ public class Slidr extends FrameLayout {
             listener.bubbleClicked(this);
         }
     }
+
+    @Override
+    public boolean onKeyPreIme(int keyCode, KeyEvent event) {
+        if (event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+            dispatchKeyEvent(event);
+            closeEditText();
+            return false;
+        }
+        return super.onKeyPreIme(keyCode, event);
+    }
+
 
     private void init(Context context, @Nullable AttributeSet attrs) {
         setWillNotDraw(false);
@@ -1125,17 +1175,16 @@ public class Slidr extends FrameLayout {
     private static class TouchView extends FrameLayout {
 
         private final Rect viewRect;
-        private final Callback callback;
+        private Callback callback;
 
-        public TouchView(Context context, Rect viewRect, Callback callback) {
+        public TouchView(Context context, Rect viewRect) {
             super(context);
             this.viewRect = viewRect;
             this.setBackgroundColor(Color.TRANSPARENT);
-            this.callback = callback;
         }
 
-        public void add(View view) {
-            addView(view);
+        public void setCallback(Callback callback) {
+            this.callback = callback;
         }
 
         @Override
@@ -1151,7 +1200,9 @@ public class Slidr extends FrameLayout {
                 //return compteurChampEditable.onTouchEvent(event);
             } else if (event.getAction() == ACTION_UP) {
                 //((ViewGroup) getParent()).removeView(this);
-                callback.onClicked();
+                if (callback != null) {
+                    callback.onClicked();
+                }
             }
             return true;
         }
