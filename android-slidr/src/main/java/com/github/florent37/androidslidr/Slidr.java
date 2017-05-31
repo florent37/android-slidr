@@ -17,6 +17,7 @@ import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v7.widget.AppCompatEditText;
 import android.text.Editable;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.text.Layout;
 import android.text.StaticLayout;
@@ -178,6 +179,9 @@ public class Slidr extends FrameLayout {
                 }
 
             };
+
+            final int editMaxCharCount =9;
+            editText.setFilters(new InputFilter[] {new InputFilter.LengthFilter(editMaxCharCount)});
 
 
             editText.setFocusable(true);
