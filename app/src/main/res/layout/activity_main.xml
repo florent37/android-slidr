@@ -1,70 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="15dp"
-    tools:context="com.github.florent37.slidr.MainActivity">
+    android:layout_height="match_parent">
 
-    <com.github.florent37.androidslidr.Slidr
-        android:layout_margin="20dp"
-        android:layout_width="250dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        app:slidr_regions_centerText="false"
-        app:slidr_region_leftColor="@color/colorLeft" />
+        android:orientation="vertical"
+        android:padding="15dp"
+        tools:context="com.github.florent37.slidr.MainActivity">
+
+        <com.github.florent37.androidslidr.Slidr
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="20dp"
+            app:slidr_region_leftColor="@color/colorLeft"
+            app:slidr_regions_centerText="false" />
 
 
-    <com.github.florent37.androidslidr.Slidr
-        android:id="@+id/slideure"
-        android:layout_margin="20dp"
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        app:slidr_region_leftColor="@color/colorLeft"
-        app:slidr_step_colorizeAfterLast="true" />
+        <com.github.florent37.androidslidr.Slidr
+            android:id="@+id/slideure"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="20dp"
+            app:slidr_region_leftColor="@color/colorLeft"
+            app:slidr_step_colorizeAfterLast="true" />
 
 
-    <com.github.florent37.androidslidr.Slidr
-        android:id="@+id/slideure_regions"
-        android:layout_margin="20dp"
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        app:slidr_regions="true"
-        app:slidr_region_leftColor="@color/colorLeft"
-        app:slidr_region_rightColor="@color/colorRight"
-        app:slidr_regions_textFollowRegionColor="true"
-        app:slidr_regions_centerText="true"
-        app:slidr_draw_bubble="false"
-        />
+        <com.github.florent37.androidslidr.Slidr
+            android:id="@+id/slideure_regions"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="20dp"
+            app:slidr_draw_bubble="false"
+            app:slidr_region_leftColor="@color/colorLeft"
+            app:slidr_region_rightColor="@color/colorRight"
+            app:slidr_regions="true"
+            app:slidr_regions_centerText="true"
+            app:slidr_regions_textFollowRegionColor="true" />
 
 
-    <com.github.florent37.androidslidr.Slidr
-        android:id="@+id/slideure2"
-        android:layout_margin="20dp"
-        android:layout_width="250dp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        app:slidr_barHeight="10dp"
-        app:slidr_step_colorizeAfterLast="true"
-        app:slidr_textBottom_visible="false"
-        app:slidr_textTop_visible="false" />
+        <com.github.florent37.androidslidr.Slidr
+            android:id="@+id/slideure2"
+            android:layout_width="250dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="20dp"
+            app:slidr_barHeight="10dp"
+            app:slidr_step_colorizeAfterLast="true"
+            app:slidr_textBottom_visible="false"
+            app:slidr_textTop_visible="false" />
 
-    <Button
-        android:id="@+id/max"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="change max"
-        />
+        <Button
+            android:id="@+id/max"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="change max" />
 
-    <Button
-        android:id="@+id/current"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="change current"
-        />
+        <Button
+            android:id="@+id/current"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="change current" />
 
-</LinearLayout>
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="600dp"/>
+
+    </LinearLayout>
+</ScrollView>

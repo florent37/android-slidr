@@ -15,7 +15,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.GestureDetectorCompat;
 import android.support.v4.view.MotionEventCompat;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.widget.AppCompatEditText;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -39,6 +41,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ScrollView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -85,6 +88,9 @@ public class Slidr extends FrameLayout {
     private EditText editText;
     private TouchView touchView;
     private EditListener editListener;
+
+    @Nullable
+    private ViewGroup scrollParent;
 
     public Slidr(Context context) {
         this(context, null);
@@ -149,6 +155,16 @@ public class Slidr extends FrameLayout {
         return  (ViewGroup) ((Activity) getContext()).getWindow().getDecorView();
     }
 
+    private ViewGroup findScrollParent(){
+        View v = (View) getParent();
+        while (v.getParent() != null && v.getParent() instanceof ViewGroup){
+            if (v instanceof ScrollView || v instanceof NestedScrollView || v instanceof RecyclerView) {
+                return ((ViewGroup) v);
+            }
+            v = (View) v.getParent();
+        }
+        return null;
+    }
 
     private void editBubbleEditPosition() {
         if (isEditing) {
@@ -386,6 +402,11 @@ public class Slidr extends FrameLayout {
         if (isEditing) {
             return false;
         }
+
+        if(scrollParent == null){
+            scrollParent = findScrollParent();
+        }
+
         boolean handledByDetector = this.detector.onTouchEvent(event);
         if (!handledByDetector) {
 
@@ -393,10 +414,16 @@ public class Slidr extends FrameLayout {
             switch (action) {
                 case ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
+                    if (scrollParent != null) {
+                        scrollParent.requestDisallowInterceptTouchEvent(false);
+                    }
                     actionUp();
                     moving = false;
                     break;
                 case MotionEvent.ACTION_DOWN:
+                    if (scrollParent != null) {
+                        scrollParent.requestDisallowInterceptTouchEvent(true);
+                    }
                     final float evY = event.getY();
                     if (evY <= barY || evY >= (barY + barWidth)) {
                         return true;
