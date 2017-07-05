@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="Sushi">
+        <attr name="sushi_barHeight" format="dimension" />
+        <attr name="sushi_displayMinMax" format="boolean" />
+        <attr name="sushi_backgroundColor" format="color" />
+        <attr name="sushi_foregroundColor" format="color" />
+        <attr name="sushi_bubbleTextSize" format="dimension" />
+        <attr name="sushi_textSize" format="dimension" />
+    </declare-styleable>
+
+</resources>

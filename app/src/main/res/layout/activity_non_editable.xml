@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="15dp"
+    tools:context="com.github.florent37.slidr.MainActivity">
+
+    <com.github.florent37.androidslidr.Sushi
+        android:id="@+id/slideure"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_margin="20dp"
+        app:sushi_textSize="12dp"
+        app:sushi_barHeight="14dp"
+        app:sushi_bubbleTextSize="14dp"
+        app:sushi_displayMinMax="true"
+        app:sushi_foregroundColor="@color/colorLeft"
+       />
+
+    <com.github.florent37.androidslidr.Sushi
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_margin="20dp"
+        app:sushi_textSize="12dp"
+        app:sushi_barHeight="14dp"
+        app:sushi_displayMinMax="false"
+        app:sushi_bubbleTextSize="14dp"
+        app:sushi_foregroundColor="@color/colorLeft"
+        />
+
+
+</LinearLayout>
