@@ -7,7 +7,7 @@ Another android slider / seekbar, but different :-)
 [ ![Download](https://api.bintray.com/packages/florent37/maven/android-slidr/images/download.svg) ](https://bintray.com/florent37/maven/android-slidr/_latestVersion)
 ```java
 dependencies {
-    compile 'com.github.florent37:android-slidr:1.0.0'
+    compile 'com.github.florent37:android-slidr:1.0.4'
 }
 ```
 
