@@ -52,12 +52,12 @@ import static android.view.MotionEvent.ACTION_UP;
 
 public class Slidr extends FrameLayout {
 
-    private static final float DISTANCE_TEXT_BAR = 20;
-    private static final float BUBBLE_PADDING_HORIZONTAL = 35;
-    private static final float BUBBLE_PADDING_VERTICAL = 20;
+    private static final float DISTANCE_TEXT_BAR = 10;
+    private static final float BUBBLE_PADDING_HORIZONTAL = 15;
+    private static final float BUBBLE_PADDING_VERTICAL = 10;
 
-    private static final float BUBBLE_ARROW_HEIGHT = 20;
-    private static final float BUBBLE_ARROW_WIDTH = 40;
+    private static final float BUBBLE_ARROW_HEIGHT = 10;
+    private static final float BUBBLE_ARROW_WIDTH = 20;
     boolean moving = false;
     private Listener listener;
     private BubbleClickedListener bubbleClickedListener;
@@ -337,6 +337,10 @@ public class Slidr extends FrameLayout {
         return size * getResources().getDisplayMetrics().density;
     }
 
+    private float dpToPx(float size) {
+        return size * getResources().getDisplayMetrics().density;
+    }
+
     private float pxToDp(int size) {
         return size / getResources().getDisplayMetrics().density;
     }
@@ -500,7 +504,7 @@ public class Slidr extends FrameLayout {
     }
 
     private void updateBubbleWidth() {
-        this.bubble.width = calculateBubbleTextWidth() + BUBBLE_PADDING_HORIZONTAL * 2f;
+        this.bubble.width = calculateBubbleTextWidth() + dpToPx(BUBBLE_PADDING_HORIZONTAL) * 2f;
         this.bubble.width = Math.max(150, this.bubble.width);
     }
 
@@ -520,14 +524,14 @@ public class Slidr extends FrameLayout {
 
         if (settings.drawBubble) {
             updateBubbleWidth();
-            this.bubble.height = dpToPx(settings.textSizeBubbleCurrent) + BUBBLE_PADDING_VERTICAL * 2f + BUBBLE_ARROW_HEIGHT;
+            this.bubble.height = dpToPx(settings.textSizeBubbleCurrent) + dpToPx(BUBBLE_PADDING_VERTICAL) * 2f + dpToPx(BUBBLE_ARROW_HEIGHT);
         } else {
             this.bubble.height = 0;
         }
 
         this.barY = 0;
         if (settings.drawTextOnTop) {
-            barY += DISTANCE_TEXT_BAR;
+            barY += DISTANCE_TEXT_BAR * 2;
             if (isRegions()) {
                 float topTextHeight = 0;
                 final String tmpTextLeft = formatRegionValue(0, 0);
@@ -549,7 +553,7 @@ public class Slidr extends FrameLayout {
             }
         } else {
             if (settings.drawBubble) {
-                this.barY -= BUBBLE_ARROW_HEIGHT / 1.5f;
+                this.barY -= dpToPx(BUBBLE_ARROW_HEIGHT) / 1.5f;
             }
         }
 
@@ -727,7 +731,7 @@ public class Slidr extends FrameLayout {
 
             { //texts top (values)
                 if (settings.drawTextOnTop) {
-                    final float textY = barY - DISTANCE_TEXT_BAR;
+                    final float textY = barY - dpToPx(DISTANCE_TEXT_BAR);
                     if (isRegions()) {
                         float leftValue;
                         float rightValue;
@@ -942,9 +946,9 @@ public class Slidr extends FrameLayout {
         final Path path = new Path();
 
         int padding = 3;
-        final Rect rect = new Rect(padding, padding, (int) width - padding, (int) (height - BUBBLE_ARROW_HEIGHT) - padding);
+        final Rect rect = new Rect(padding, padding, (int) width - padding, (int) (height - dpToPx(BUBBLE_ARROW_HEIGHT)) - padding);
 
-        final float roundRectHeight = (height - BUBBLE_ARROW_HEIGHT) / 2;
+        final float roundRectHeight = (height - dpToPx(BUBBLE_ARROW_HEIGHT)) / 2;
 
         path.moveTo(rect.left + roundRectHeight, rect.top);
         path.lineTo(rect.right - roundRectHeight, rect.top);
@@ -952,9 +956,9 @@ public class Slidr extends FrameLayout {
         path.lineTo(rect.right, rect.bottom - roundRectHeight);
         path.quadTo(rect.right, rect.bottom, rect.right - roundRectHeight, rect.bottom);
 
-        path.lineTo(triangleCenterX + BUBBLE_ARROW_WIDTH / 2f, height - BUBBLE_ARROW_HEIGHT - padding);
+        path.lineTo(triangleCenterX + dpToPx(BUBBLE_ARROW_WIDTH) / 2f, height - dpToPx(BUBBLE_ARROW_HEIGHT) - padding);
         path.lineTo(triangleCenterX, height - padding);
-        path.lineTo(triangleCenterX - BUBBLE_ARROW_WIDTH / 2f, height - BUBBLE_ARROW_HEIGHT - padding);
+        path.lineTo(triangleCenterX - dpToPx(BUBBLE_ARROW_WIDTH) / 2f, height - dpToPx(BUBBLE_ARROW_HEIGHT) - padding);
 
         path.lineTo(rect.left + roundRectHeight, rect.bottom);
         path.quadTo(rect.left, rect.bottom, rect.left, rect.bottom - roundRectHeight);
@@ -993,7 +997,7 @@ public class Slidr extends FrameLayout {
 
             if (!isEditing) {
                 final String bubbleText = formatValue(getCurrentValue());
-                drawText(canvas, bubbleText, BUBBLE_PADDING_HORIZONTAL, BUBBLE_PADDING_VERTICAL - 3, settings.paintBubbleTextCurrent, Layout.Alignment.ALIGN_NORMAL);
+                drawText(canvas, bubbleText, dpToPx(BUBBLE_PADDING_HORIZONTAL), dpToPx(BUBBLE_PADDING_VERTICAL) - 3, settings.paintBubbleTextCurrent, Layout.Alignment.ALIGN_NORMAL);
             }
         }
 
@@ -1071,7 +1075,7 @@ public class Slidr extends FrameLayout {
         private int textTopSize = 12;
         private int textBottomSize = 12;
         private int textSizeBubbleCurrent = 16;
-        private float barHeight = 35;
+        private float barHeight = 15;
         private float paddingCorners;
         private boolean step_colorizeAfterLast = false;
         private boolean step_drawLines = true;
@@ -1143,7 +1147,7 @@ public class Slidr extends FrameLayout {
                 this.drawTextOnBottom = a.getBoolean(R.styleable.Slidr_slidr_textBottom_visible, drawTextOnBottom);
                 setTextBottomSize(a.getDimensionPixelSize(R.styleable.Slidr_slidr_textBottom_size, (int) dpToPx(textBottomSize)));
 
-                this.barHeight = a.getDimensionPixelOffset(R.styleable.Slidr_slidr_barHeight, (int) barHeight);
+                this.barHeight = a.getDimensionPixelOffset(R.styleable.Slidr_slidr_barHeight, (int) dpToPx(barHeight));
                 this.drawBubble = a.getBoolean(R.styleable.Slidr_slidr_draw_bubble, drawBubble);
                 this.modeRegion = a.getBoolean(R.styleable.Slidr_slidr_regions, modeRegion);
 
@@ -1216,6 +1220,10 @@ public class Slidr extends FrameLayout {
             return size * slidr.getResources().getDisplayMetrics().density;
         }
 
+        private float dpToPx(float size) {
+            return size * slidr.getResources().getDisplayMetrics().density;
+        }
+
     }
 
     private static class TouchView extends FrameLayout {
@@ -1270,7 +1278,7 @@ public class Slidr extends FrameLayout {
         }
 
         public float getHeight() {
-            return height - BUBBLE_ARROW_HEIGHT;
+            return height - dpToPx(BUBBLE_ARROW_HEIGHT);
         }
 
         public float getX() {
