@@ -29,11 +29,6 @@ public class MainActivity extends AppCompatActivity {
                     public void valueChanged(Slidr slidr, float currentValue) {
 
                     }
-
-                    @Override
-                    public void bubbleClicked(Slidr slidr) {
-
-                    }
                 });
             }
 

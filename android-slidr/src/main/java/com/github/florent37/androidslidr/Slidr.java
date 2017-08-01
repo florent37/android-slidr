@@ -8,7 +8,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.support.annotation.NonNull;
@@ -35,8 +34,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -47,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static android.content.Context.WINDOW_SERVICE;
 import static android.view.MotionEvent.ACTION_UP;
 
 /**
@@ -64,6 +60,7 @@ public class Slidr extends FrameLayout {
     private static final float BUBBLE_ARROW_WIDTH = 40;
     boolean moving = false;
     private Listener listener;
+    private BubbleClickedListener bubbleClickedListener;
     private GestureDetectorCompat detector;
     private Settings settings;
     private float max = 1000;
@@ -90,7 +87,7 @@ public class Slidr extends FrameLayout {
     private EditListener editListener;
 
     @Nullable
-    private ViewGroup scrollParent;
+    private ViewGroup parentScroll;
 
     public Slidr(Context context) {
         this(context, null);
@@ -110,6 +107,12 @@ public class Slidr extends FrameLayout {
         if (bubble.clicked(e)) {
             onBubbleClicked();
         }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        parentScroll = (ViewGroup) getScrollableParentView();
     }
 
     private void closeEditText() {
@@ -140,7 +143,7 @@ public class Slidr extends FrameLayout {
         valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                setCurrentValue(((float) animation.getAnimatedValue()));
+                setCurrentValueNoUpdate(((float) animation.getAnimatedValue()));
                 postInvalidate();
             }
         });
@@ -152,19 +155,9 @@ public class Slidr extends FrameLayout {
     }
 
     private ViewGroup getActivityDecorView() {
-        return  (ViewGroup) ((Activity) getContext()).getWindow().getDecorView();
+        return (ViewGroup) ((Activity) getContext()).getWindow().getDecorView();
     }
 
-    private ViewGroup findScrollParent(){
-        View v = (View) getParent();
-        while (v.getParent() != null && v.getParent() instanceof ViewGroup){
-            if (v instanceof ScrollView || v instanceof NestedScrollView || v instanceof RecyclerView) {
-                return ((ViewGroup) v);
-            }
-            v = (View) v.getParent();
-        }
-        return null;
-    }
 
     private void editBubbleEditPosition() {
         if (isEditing) {
@@ -196,8 +189,8 @@ public class Slidr extends FrameLayout {
 
             };
 
-            final int editMaxCharCount =9;
-            editText.setFilters(new InputFilter[] {new InputFilter.LengthFilter(editMaxCharCount)});
+            final int editMaxCharCount = 9;
+            editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(editMaxCharCount)});
 
 
             editText.setFocusable(true);
@@ -261,7 +254,7 @@ public class Slidr extends FrameLayout {
                 editListener.onEditStarted(editText);
             }
 
-            editText.setOnKeyListener(new View.OnKeyListener() {
+            editText.setOnKeyListener(new OnKeyListener() {
                 public boolean onKey(View v, int keyCode, KeyEvent event) {
                     if ((event.getAction() == KeyEvent.ACTION_DOWN) && (keyCode == KeyEvent.KEYCODE_ENTER)) {
                         closeEditText();
@@ -292,8 +285,8 @@ public class Slidr extends FrameLayout {
 
             postInvalidate();
         }
-        if (listener != null) {
-            listener.bubbleClicked(this);
+        if (bubbleClickedListener != null) {
+            bubbleClickedListener.bubbleClicked(this);
         }
     }
 
@@ -334,6 +327,10 @@ public class Slidr extends FrameLayout {
         this.listener = listener;
     }
 
+    public void setBubbleClickedListener(BubbleClickedListener bubbleClickedListener) {
+        this.bubbleClickedListener = bubbleClickedListener;
+    }
+
     //region getters
 
     private float dpToPx(int size) {
@@ -370,6 +367,13 @@ public class Slidr extends FrameLayout {
         update();
     }
 
+    private void setCurrentValueNoUpdate(float value) {
+        this.currentValue = value;
+        listener.valueChanged(Slidr.this, currentValue);
+        updateValues();
+
+    }
+
     public void setEditListener(EditListener editListener) {
         this.editListener = editListener;
     }
@@ -393,6 +397,17 @@ public class Slidr extends FrameLayout {
         update();
     }
 
+    private View getScrollableParentView() {
+        View view = this;
+        while (view.getParent() != null && view.getParent() instanceof View) {
+            view = (View) view.getParent();
+            if (view instanceof ScrollView || view instanceof RecyclerView || view instanceof NestedScrollView) {
+                return view;
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return handleTouch(event);
@@ -402,11 +417,6 @@ public class Slidr extends FrameLayout {
         if (isEditing) {
             return false;
         }
-
-        if(scrollParent == null){
-            scrollParent = findScrollParent();
-        }
-
         boolean handledByDetector = this.detector.onTouchEvent(event);
         if (!handledByDetector) {
 
@@ -414,21 +424,21 @@ public class Slidr extends FrameLayout {
             switch (action) {
                 case ACTION_UP:
                 case MotionEvent.ACTION_CANCEL:
-                    if (scrollParent != null) {
-                        scrollParent.requestDisallowInterceptTouchEvent(false);
+                    if (parentScroll != null) {
+                        parentScroll.requestDisallowInterceptTouchEvent(false);
                     }
                     actionUp();
                     moving = false;
                     break;
                 case MotionEvent.ACTION_DOWN:
-                    if (scrollParent != null) {
-                        scrollParent.requestDisallowInterceptTouchEvent(true);
-                    }
                     final float evY = event.getY();
                     if (evY <= barY || evY >= (barY + barWidth)) {
                         return true;
                     } else {
                         moving = true;
+                    }
+                    if (parentScroll != null) {
+                        parentScroll.requestDisallowInterceptTouchEvent(true);
                     }
                 case MotionEvent.ACTION_MOVE: {
                     if (moving) {
@@ -461,10 +471,13 @@ public class Slidr extends FrameLayout {
         if (barWidth > 0f) {
             float currentPercent = indicatorX / barWidth;
             currentValue = currentPercent * (max - min) + min;
+            currentValue = Math.round(currentValue);
 
             if (listener != null && oldValue != currentValue) {
                 oldValue = currentValue;
                 listener.valueChanged(Slidr.this, currentValue);
+            } else {
+
             }
 
             updateBubbleWidth();
@@ -1004,7 +1017,9 @@ public class Slidr extends FrameLayout {
 
     public interface Listener {
         void valueChanged(Slidr slidr, float currentValue);
+    }
 
+    public interface BubbleClickedListener {
         void bubbleClicked(Slidr slidr);
     }
 

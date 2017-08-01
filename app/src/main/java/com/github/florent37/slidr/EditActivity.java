@@ -19,14 +19,15 @@ public class EditActivity extends AppCompatActivity {
 
         final Slidr slidr = (Slidr) findViewById(R.id.slideure);
         slidr.setMin(200);
+        slidr.setBubbleClickedListener(new Slidr.BubbleClickedListener() {
+            @Override
+            public void bubbleClicked(Slidr slidr) {
+
+            }
+        });
         slidr.setListener(new Slidr.Listener() {
             @Override
             public void valueChanged(Slidr slidr, float currentValue) {
-
-            }
-
-            @Override
-            public void bubbleClicked(Slidr slidr) {
 
             }
         });
