@@ -612,8 +612,7 @@ public class Slidr extends FrameLayout {
             final Step step = steps.get(i);
             if ((currentValue - min) <= step.value) {
                 return step;
-            }
-            break;
+            }     
         }
         return null;
     }
